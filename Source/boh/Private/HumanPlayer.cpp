@@ -55,6 +55,7 @@ void AHumanPlayer::OnTurn()
 	IsMyTurn = true;
 	UE_LOG(LogTemp, Warning, TEXT("PLAYER TURN"));
 	AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
+	GameMode->PassIfForced();
 	GameMode->CurrentGameState = EGameState::WaitingAction;
 }
 
@@ -166,6 +167,7 @@ void AHumanPlayer::OnClick()
 						}
 					}
 				}
+				//IsMyTurn = false;
 			}
 		break;
 
@@ -214,6 +216,7 @@ void AHumanPlayer::OnClick()
 						}
 					}
 				}
+				//IsMyTurn = false;
 			}
 		break;
 	}

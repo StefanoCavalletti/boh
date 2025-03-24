@@ -119,5 +119,8 @@ public:
 
 	FVector GetRelativeLocationByXYPosition(const int32 InX, const int32 InY);
 
+	UFUNCTION()
+	void MyTurnSafePass();
+
 	AMyGameModeBase();
 };

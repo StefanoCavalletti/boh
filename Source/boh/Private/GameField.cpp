@@ -323,7 +323,7 @@ void AGameField::SetAllTilesWhite()
 	}
 }
 
-void AGameField::MoveUnitTo(AGameUnit* Unit, FVector2D Dest)
+/*void AGameField::MoveUnitTo(AGameUnit* Unit, FVector2D Dest)
 {
 	FString Player = Unit->Owner == 0 ? TEXT("HP: ") : TEXT("CP: ");
 	FString UT = Unit->UnitType == EUnits::SNIPER ? TEXT("S ") : TEXT("B ");
@@ -336,16 +336,6 @@ void AGameField::MoveUnitTo(AGameUnit* Unit, FVector2D Dest)
 	{
 		UE_LOG(LogTemp, Log, TEXT("TILE COORD: X = %f, Y = %f"), Vector.X, Vector.Y);
 	}
-	/*while (!BestPath.IsEmpty()) {
-		FTimerHandle TimerHandle;
-		GetWorld()->GetTimerManager().SetTimer(TimerHandle, [&]()
-			{
-				UE_LOG(LogTemp, Warning, TEXT("FOLLOWING PATH"));
-				FVector2D NextTile = BestPath[0];
-				BestPath.RemoveAt(0);
-				Unit->SetActorLocation(GetRelativeLocationByXYPosition(NextTile.X, NextTile.Y) + FVector(0, 0, 2));
-			}, 0.3f, false);
-	}*/
 	for (int32 Index = 0; Index < BestPath.Num(); Index++) {			//IL Problema è che TimeSium Ritarda la chiamata della funzione in modo asincrono e quindi quando la funzione viene chiamata bestpath non esiste più
 		FTimerHandle TimerHandle;										//Risolto con lamda ma ci sono altri ovvi problemi :////
 
@@ -359,7 +349,60 @@ void AGameField::MoveUnitTo(AGameUnit* Unit, FVector2D Dest)
 	(*TileMap.Find(Dest))->TileStatus = ETileStatus::OCCUPIED; //FORSE POSSO RISOLVERE NON FACENDO RITORNARE FINO A QUANDO UN CONTATORE NON ARRIVA A BestPath.Num con un WHILE
 	Unit->GridPosition = Dest;
 	Unit->bCanMove = false;
+}*/
+
+void AGameField::MoveUnitTo(AGameUnit* Unit, FVector2D Dest)
+{
+	FString Player = Unit->Owner == 0 ? TEXT("HP: ") : TEXT("CP: ");
+	FString UT = Unit->UnitType == EUnits::SNIPER ? TEXT("S ") : TEXT("B ");
+	UMyGameInstance* GameInstance = Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
+	GameInstance->AddLogMessage(Player + UT + ConvertCoord(Unit->GridPosition) + TEXT(" -> ") + ConvertCoord(Dest));
+	AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
+
+	(*TileMap.Find(Unit->GridPosition))->TileStatus = ETileStatus::EMPTY;
+	TArray<FVector2D> BestPath = FindPath(Unit->GridPosition, Dest);
+
+	for (const FVector2D& Vector : BestPath)
+	{
+		UE_LOG(LogTemp, Log, TEXT("TILE COORD: X = %f, Y = %f"), Vector.X, Vector.Y);
+	}
+	// Aspetta che MoveAlongPath finisca prima di aggiornare lo stato dell'unità
+	MoveAlongPath(Unit, BestPath, 0, [this, Unit, Dest, GameMode]()
+		{
+			(*TileMap.Find(Dest))->TileStatus = ETileStatus::OCCUPIED;
+			Unit->GridPosition = Dest;
+			Unit->bCanMove = false;
+			UE_LOG(LogTemp, Warning, TEXT("UNIT MOVEMENT COMPLETED!"));
+			GameMode->Players[GameMode->CurrentPlayer]->OnTurn();
+		});
+	return;
 }
+
+void AGameField::MoveAlongPath(AGameUnit* Unit, TArray<FVector2D> Path, int32 Step, TFunction<void()> OnComplete)
+{
+	if (Step >= Path.Num())
+	{
+		if (OnComplete)
+		{
+			OnComplete(); // Chiama la funzione di callback alla fine del percorso
+		}
+		return;
+	}
+
+	FVector2D NextTile = Path[Step];
+
+	// Imposta il timer per il prossimo movimento
+	FTimerHandle TimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this, Unit, Path, Step, OnComplete]()
+		{
+			UE_LOG(LogTemp, Warning, TEXT("FOLLOWING PATH %d"), Step);
+			Unit->SetActorLocation(GetRelativeLocationByXYPosition(Path[Step].X, Path[Step].Y) + FVector(0, 0, 2));
+
+			// Chiamata ricorsiva per il passo successivo
+			MoveAlongPath(Unit, Path, Step + 1, OnComplete);
+		}), 0.3f, false);
+}
+
 
 void AGameField::Attack(AGameUnit* Attacker, AGameUnit* Attacked)
 {
@@ -400,6 +443,7 @@ void AGameField::Attack(AGameUnit* Attacker, AGameUnit* Attacked)
 		(*Tile)->TileStatus = ETileStatus::EMPTY;
 		Attacker->GridPosition = FVector2D(-1000, -1000);
 	}
+	Attacker->bCanAttack = false;
 	GameInstance->UpdateStats();
 	CheckWin();
 }

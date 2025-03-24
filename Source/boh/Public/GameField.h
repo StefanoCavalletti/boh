@@ -73,7 +73,7 @@ public:
 	void ResetField();
 	virtual void FieldBuilder();
 	FString ConvertCoord(FVector2D Coord);
-	
+	void MoveAlongPath(AGameUnit* Unit, TArray<FVector2D> Path, int32 Step, TFunction<void()> OnComplete);
 
 protected:
 	// Called when the game starts or when spawned

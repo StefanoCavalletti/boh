@@ -29,6 +29,7 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	virtual void OnTurn() override;
+	void Play();
 	virtual void OnWin() override;
 	virtual void OnLose() override;
 	virtual void OnPlacing() override;

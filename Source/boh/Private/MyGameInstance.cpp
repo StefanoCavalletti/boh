@@ -48,7 +48,7 @@ void UMyGameInstance::SetUpTurns()
 	GameWidgetTurns->AddToViewport();
 	AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
 	UButton* PassButton = Cast<UButton>(GameWidgetTurns->GetWidgetFromName(TEXT("PassButton")));
-	PassButton->OnClicked.AddDynamic(GameMode, &AMyGameModeBase::SafePass);
+	PassButton->OnClicked.AddDynamic(GameMode, &AMyGameModeBase::MyTurnSafePass);
 	UpdateStats();
 }
 

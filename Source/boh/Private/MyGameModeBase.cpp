@@ -220,3 +220,10 @@ FVector AMyGameModeBase::GetRelativeLocationByXYPosition(const int32 InX, const 
 {
 	return GField->GetRelativeLocationByXYPosition(InX,InY);
 }
+
+void AMyGameModeBase::MyTurnSafePass()
+{
+	if (CurrentPlayer == 0) {
+		SafePass();
+	}
+}

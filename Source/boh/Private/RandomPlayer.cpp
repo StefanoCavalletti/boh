@@ -35,7 +35,7 @@ void ARandomPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 
 }
 
-void ARandomPlayer::OnTurn()
+/*void ARandomPlayer::OnTurn()
 {
 	UE_LOG(LogTemp, Warning, TEXT("RANDOM AI TURN"));
 	AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
@@ -72,6 +72,69 @@ void ARandomPlayer::OnTurn()
 	}
 	if (!GameMode->IsGameOver) {
 		GameMode->NextPlayerTurn();
+		//GameMode->PassIfForced();
+	}
+	else {
+		//GameMode->GField->ResetField();
+	}
+}*/
+
+void ARandomPlayer::OnTurn()
+{
+	UE_LOG(LogTemp, Warning, TEXT("RANDOM AI TURN"));
+	AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
+	GameMode->PassIfForced(); //DEVO FARE RETURN SE PASS IF FORCED RITORNA TRUE
+	if (GameMode->CurrentPlayer == 0)
+		return;
+	for (AGameUnit* Unit : GameMode->GField->UnitsArray) {
+		if (Unit->Owner == GameMode->CurrentPlayer and Unit->HealtPoints > 0) {
+			if (Unit->bCanMove) {
+				TArray<ATile*> AccessibleTiles = GameMode->GField->ReachableTiles(Unit->GridPosition, Unit->MovementRange, 0);
+				UE_LOG(LogTemp, Warning, TEXT("Accessible tiles %d"), AccessibleTiles.Num());
+				ATile* Tile = AccessibleTiles[FMath::RandRange(0, AccessibleTiles.Num() - 1)];
+				GameMode->GField->MoveUnitTo(Unit, Tile->GetGridPosition());
+				GameMode->PassIfForced();
+				return;
+			}
+			else if (Unit->bCanAttack)
+			{
+				TArray<ATile*> AttackableTiles = GameMode->GField->AttackableTiles(Unit->GridPosition, Unit->AttackRange, 0);
+				UE_LOG(LogTemp, Warning, TEXT("Attackable tiles %d"), AttackableTiles.Num());
+				if (!AttackableTiles.IsEmpty()) {
+					ATile* TileToAttack = AttackableTiles[FMath::RandRange(0, AttackableTiles.Num() - 1)];
+					for (AGameUnit* UnitToAttack : GameMode->GField->UnitsArray) {
+						if (UnitToAttack->GridPosition == TileToAttack->GetGridPosition() and UnitToAttack->Owner != GameMode->CurrentPlayer) {
+							GameMode->GField->Attack(Unit, UnitToAttack);
+							//GameMode->PassIfForced();
+							this->OnTurn();
+							return;
+						}
+					}
+				}
+			}
+		}
+	}
+	if (!GameMode->IsGameOver) {
+		//GameMode->NextPlayerTurn();
+		GameMode->PassIfForced();
+	}
+	else {
+		//GameMode->GField->ResetField();
+	}
+}
+
+void ARandomPlayer::Play()
+{
+	AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
+	TArray<AGameUnit*> Units;
+	for (AGameUnit* Unit : GameMode->GField->UnitsArray) {
+		if (Unit->Owner == GameMode->CurrentPlayer and Unit->HealtPoints > 0) {
+			Units.Add(Unit);
+		}
+	}
+	if (!GameMode->IsGameOver) {
+		//GameMode->NextPlayerTurn();
+		GameMode->PassIfForced();
 	}
 	else {
 		//GameMode->GField->ResetField();
