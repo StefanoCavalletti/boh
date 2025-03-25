@@ -358,6 +358,7 @@ void AGameField::MoveUnitTo(AGameUnit* Unit, FVector2D Dest)
 	UMyGameInstance* GameInstance = Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
 	GameInstance->AddLogMessage(Player + UT + ConvertCoord(Unit->GridPosition) + TEXT(" -> ") + ConvertCoord(Dest));
 	AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
+	GameMode->CurrentGameState = EGameState::MovingUnit;
 
 	(*TileMap.Find(Unit->GridPosition))->TileStatus = ETileStatus::EMPTY;
 	TArray<FVector2D> BestPath = FindPath(Unit->GridPosition, Dest);
@@ -367,14 +368,37 @@ void AGameField::MoveUnitTo(AGameUnit* Unit, FVector2D Dest)
 		UE_LOG(LogTemp, Log, TEXT("TILE COORD: X = %f, Y = %f"), Vector.X, Vector.Y);
 	}
 	// Aspetta che MoveAlongPath finisca prima di aggiornare lo stato dell'unità
-	MoveAlongPath(Unit, BestPath, 0, [this, Unit, Dest, GameMode]()
-		{
-			(*TileMap.Find(Dest))->TileStatus = ETileStatus::OCCUPIED;
-			Unit->GridPosition = Dest;
-			Unit->bCanMove = false;
-			UE_LOG(LogTemp, Warning, TEXT("UNIT MOVEMENT COMPLETED!"));
-			GameMode->Players[GameMode->CurrentPlayer]->OnTurn();
-		});
+	if (GameMode->CurrentPlayer == 1) {
+		ShowReachableTiles(Unit->GridPosition, Unit->MovementRange, 0);
+		FTimerHandle TimerHandle;
+		GetWorld()->GetTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this, Unit, BestPath, Dest, GameMode]()
+			{
+				SetAllTilesWhite();
+				ShowPath(BestPath);
+				MoveAlongPath(Unit, BestPath, 0, [this, Unit, Dest, GameMode]()
+					{
+						(*TileMap.Find(Dest))->TileStatus = ETileStatus::OCCUPIED;
+						Unit->GridPosition = Dest;
+						Unit->bCanMove = false;
+						UE_LOG(LogTemp, Warning, TEXT("UNIT MOVEMENT COMPLETED!"));
+						GameMode->Players[GameMode->CurrentPlayer]->OnTurn();
+					});
+			}), 2.0f, false);
+		//Metti le tile verdi
+		//Aspetta 1 sec
+		//Rimetti bianche
+	}
+	else {
+		ShowPath(BestPath);
+		MoveAlongPath(Unit, BestPath, 0, [this, Unit, Dest, GameMode]()
+			{
+				(*TileMap.Find(Dest))->TileStatus = ETileStatus::OCCUPIED;
+				Unit->GridPosition = Dest;
+				Unit->bCanMove = false;
+				UE_LOG(LogTemp, Warning, TEXT("UNIT MOVEMENT COMPLETED!"));
+				GameMode->Players[GameMode->CurrentPlayer]->OnTurn();
+			});
+	}
 	return;
 }
 
@@ -384,6 +408,8 @@ void AGameField::MoveAlongPath(AGameUnit* Unit, TArray<FVector2D> Path, int32 St
 	{
 		if (OnComplete)
 		{
+			AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
+			GameMode->CurrentGameState = EGameState::WaitingAction;
 			OnComplete(); // Chiama la funzione di callback alla fine del percorso
 		}
 		return;
@@ -397,7 +423,9 @@ void AGameField::MoveAlongPath(AGameUnit* Unit, TArray<FVector2D> Path, int32 St
 		{
 			UE_LOG(LogTemp, Warning, TEXT("FOLLOWING PATH %d"), Step);
 			Unit->SetActorLocation(GetRelativeLocationByXYPosition(Path[Step].X, Path[Step].Y) + FVector(0, 0, 2));
-
+			ATile** Tile = TileMap.Find(Path[Step]);
+			(*Tile)->ChangeColor(FLinearColor::White);
+			(*Tile)->TileColor = ETileColor::WHITE;
 			// Chiamata ricorsiva per il passo successivo
 			MoveAlongPath(Unit, Path, Step + 1, OnComplete);
 		}), 0.3f, false);
@@ -517,6 +545,15 @@ TArray<FVector2D> AGameField::FindPath(FVector2D Start, FVector2D Goal)
 	return Path; // Se nessun percorso trovato, restituisce un array vuoto
 }
 
+void AGameField::ShowPath(TArray<FVector2D> Path)
+{
+	for (FVector2D Coord : Path) {
+		ATile** Tile = TileMap.Find(Coord);
+		(*Tile)->ChangeColor(FLinearColor::Green);
+		(*Tile)->TileColor = ETileColor::GREEN;
+	}
+}
+
 void AGameField::CheckWin()
 {
 	int32 DeadHuman = 0, DeadComputer = 0;
@@ -557,7 +594,9 @@ void AGameField::CheckWin()
 
 void AGameField::ResetField()
 {
+	AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
 	if (!GetWorld()) return;
+	if (GameMode->CurrentGameState == EGameState::ComputerPlacing) return;
 
 	TArray<AActor*> FoundActors;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ObstacleClass, FoundActors);
@@ -585,7 +624,6 @@ void AGameField::ResetField()
 	UnitsArray.Empty();
 	UMyGameInstance* GameInstance = Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
 	GameInstance->RemoveWidgets();
-	AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
 	GameMode->StartGame();
 }
 

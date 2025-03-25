@@ -14,10 +14,10 @@ enum class EGameState : uint8
 {
 	PlacingBrawler    UMETA(DisplayName = "PlacingBrawler"),
 	PlacingSniper    UMETA(DisplayName = "PlacingSniper"),
+	ComputerPlacing UMETA(DisplayName = "ComputerPlacing"),
 	MovingUnit     UMETA(DisplayName = "MovingUnit"),
 	WaitingSelection  UMETA(DisplayName = "WaitingSelection"),
 	WaitingAction	UMETA(DisplayName = "WaitingAction")
-
 };
 
 
@@ -89,33 +89,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSubclassOf<AActor> RedBrawlerActor;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
-	TSubclassOf<UUserWidget> GameWidgetClass;
-	/** Riferimento al Widget creato */
-	UPROPERTY()
-	UUserWidget* GameWidget;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
-	TSubclassOf<UUserWidget> WidgetPlacingClass;
-
-	UPROPERTY()
-	UUserWidget* GameWidgetPlacing;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
-	TSubclassOf<UUserWidget> WidgetTurnsClass;
-
-	UPROPERTY()
-	UUserWidget* GameWidgetTurns;
-
 	int32 GetNextPlayer(int32 Player);
 	
 	void NextPlayerPlace();
 
 	void NextPlayerTurn();
-
-	void RemoveBrawlerButton();
-
-	void RemoveSniperButton();
 
 	FVector GetRelativeLocationByXYPosition(const int32 InX, const int32 InY);
 

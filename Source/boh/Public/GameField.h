@@ -68,6 +68,7 @@ public:
 	void MoveUnitTo(AGameUnit* Unit, FVector2D Dest);
 	void Attack(AGameUnit* Attacker, AGameUnit* Attacked);
 	TArray<FVector2D> FindPath(FVector2D Start, FVector2D Goal);
+	void ShowPath(TArray<FVector2D> Path);
 	void CheckWin();
 	UFUNCTION()
 	void ResetField();

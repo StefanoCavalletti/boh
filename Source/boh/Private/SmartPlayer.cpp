@@ -1,95 +1,60 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "RandomPlayer.h"
+#include "SmartPlayer.h"
 #include "Tile.h"
 #include "MyGameModeBase.h"
 #include "GameUnit.h"
 
 // Sets default values
-ARandomPlayer::ARandomPlayer()
+ASmartPlayer::ASmartPlayer()
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
-
 }
 
 // Called when the game starts or when spawned
-void ARandomPlayer::BeginPlay()
+void ASmartPlayer::BeginPlay()
 {
 	Super::BeginPlay();
 	
 }
 
 // Called every frame
-void ARandomPlayer::Tick(float DeltaTime)
+void ASmartPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
 }
 
 // Called to bind functionality to input
-void ARandomPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void ASmartPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 }
 
-/*void ARandomPlayer::OnTurn()
+void ASmartPlayer::OnTurn()
 {
-	UE_LOG(LogTemp, Warning, TEXT("RANDOM AI TURN"));
+	UE_LOG(LogTemp, Warning, TEXT("SMART COMPUTER TURN"));
 	AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
-	TArray<AGameUnit*> Units;
-	for (AGameUnit* Unit : GameMode->GField->UnitsArray) {
-		if (Unit->Owner == GameMode->CurrentPlayer and Unit->HealtPoints > 0) {
-			Units.Add(Unit);
-		}
-	}
-	while (!Units.IsEmpty()) {
-		int32 Index = FMath::RandRange(0, Units.Num() - 1);
-		AGameUnit* Unit = Units[Index];
-		Unit->bCanMove = FMath::RandBool();
-		Unit->bCanAttack = FMath::RandBool();
-		if (Unit->bCanMove) {
-			TArray<ATile*> AccessibleTiles = GameMode->GField->ReachableTiles(Unit->GridPosition, Unit->MovementRange,0);
-			UE_LOG(LogTemp, Warning, TEXT("Accessible tiles %d"), AccessibleTiles.Num());
-			ATile* Tile = AccessibleTiles[FMath::RandRange(0, AccessibleTiles.Num() - 1)];
-			GameMode->GField->MoveUnitTo(Unit, Tile->GetGridPosition());
-		}
-		if (Unit->bCanAttack) {
-			TArray<ATile*> AttackableTiles = GameMode->GField->AttackableTiles(Unit->GridPosition, Unit->AttackRange,0);
-			UE_LOG(LogTemp, Warning, TEXT("Attackable tiles %d"), AttackableTiles.Num());
-			if (!AttackableTiles.IsEmpty()) {
-				ATile* TileToAttack = AttackableTiles[FMath::RandRange(0, AttackableTiles.Num() - 1)];
-				for (AGameUnit* UnitToAttack : GameMode->GField->UnitsArray) {
-					if (UnitToAttack->GridPosition == TileToAttack->GetGridPosition() and UnitToAttack->Owner != GameMode->CurrentPlayer) {
-						GameMode->GField->Attack(Unit,UnitToAttack);
-					}
-				}
-			}
-		}
-		Units.RemoveAt(Index);
-	}
-	if (!GameMode->IsGameOver) {
-		GameMode->NextPlayerTurn();
-		//GameMode->PassIfForced();
-	}
-	else {
-		//GameMode->GField->ResetField();
-	}
-}*/
-
-void ARandomPlayer::OnTurn()
-{
-	UE_LOG(LogTemp, Warning, TEXT("RANDOM AI TURN"));
-	AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
-	if (GameMode->IsGameOver) return;
 	GameMode->PassIfForced(); //DEVO FARE RETURN SE PASS IF FORCED RITORNA TRUE
 	if (GameMode->CurrentPlayer == 0)
 		return;
 	for (AGameUnit* Unit : GameMode->GField->UnitsArray) {
 		if (Unit->Owner == GameMode->CurrentPlayer and Unit->HealtPoints > 0) {
 			if (Unit->bCanMove) {
+				switch (Unit->UnitType) {
+					case EUnits::SNIPER:
+						//Muoviti verso le unita nemiche se sono lontane
+					break;
+
+					case EUnits::BRAWLER:
+						//Priorità andare sotto lo sniper
+					break;
+				}
+
+
 				TArray<ATile*> AccessibleTiles = GameMode->GField->ReachableTiles(Unit->GridPosition, Unit->MovementRange, 0);
 				UE_LOG(LogTemp, Warning, TEXT("Accessible tiles %d"), AccessibleTiles.Num());
 				ATile* Tile = AccessibleTiles[FMath::RandRange(0, AccessibleTiles.Num() - 1)];
@@ -107,13 +72,13 @@ void ARandomPlayer::OnTurn()
 						if (UnitToAttack->GridPosition == TileToAttack->GetGridPosition() and UnitToAttack->Owner != GameMode->CurrentPlayer) {
 							GameMode->GField->ShowAttackableTiles(Unit->GridPosition, Unit->AttackRange, 0);
 							FTimerHandle TimerHandle;
-							GetWorld()->GetTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this, GameMode,Unit,UnitToAttack]()
-							{
-								GameMode->GField->SetAllTilesWhite();
-								GameMode->GField->Attack(Unit, UnitToAttack);
-								//GameMode->PassIfForced();
-								this->OnTurn();
-							}), 1.5f, false);
+							GetWorld()->GetTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this, GameMode, Unit, UnitToAttack]()
+								{
+									GameMode->GField->SetAllTilesWhite();
+									GameMode->GField->Attack(Unit, UnitToAttack);
+									//GameMode->PassIfForced();
+									this->OnTurn();
+								}), 1.5f, false);
 							return;
 						}
 					}
@@ -130,15 +95,15 @@ void ARandomPlayer::OnTurn()
 	}
 }
 
-void ARandomPlayer::OnWin()
+void ASmartPlayer::OnWin()
 {
 }
 
-void ARandomPlayer::OnLose()
+void ASmartPlayer::OnLose()
 {
 }
 
-void ARandomPlayer::OnPlacing()
+void ASmartPlayer::OnPlacing()
 {
 	AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
 	GameMode->CurrentGameState = EGameState::ComputerPlacing;
@@ -155,10 +120,10 @@ void ARandomPlayer::OnPlacing()
 				IndexY = FMath::RandRange(0, GameMode->FieldSize - 1);
 				RandTile = GameMode->GField->TileMap.Find(FVector2D(IndexX, IndexY));
 			} while ((*RandTile)->TileStatus == ETileStatus::OCCUPIED);
-			
+
 			FVector Location = (*RandTile)->GetActorLocation() + FVector(0, 0, 2);
 			(*RandTile)->TileStatus = ETileStatus::OCCUPIED;
-			
+
 			AGameUnit* UnitPtr = nullptr;
 
 			switch (UnitToPlace) {
@@ -183,9 +148,6 @@ void ARandomPlayer::OnPlacing()
 			{
 				GameMode->NextPlayerPlace();
 			}
-		}, 1.5f, false); 
+		}, 1.5f, false);
 }
-
-
-
 

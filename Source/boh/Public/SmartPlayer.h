@@ -5,17 +5,16 @@
 #include "CoreMinimal.h"
 #include "PlayerInterface.h"
 #include "GameFramework/Pawn.h"
-#include "RandomPlayer.generated.h"
-
+#include "SmartPlayer.generated.h"
 
 UCLASS()
-class BOH_API ARandomPlayer : public APawn, public IPlayerInterface
+class BOH_API ASmartPlayer : public APawn, public IPlayerInterface
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this pawn's properties
-	ARandomPlayer();
+	ASmartPlayer();
 
 protected:
 	// Called when the game starts or when spawned
@@ -27,7 +26,6 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
 	virtual void OnTurn() override;
 	virtual void OnWin() override;
 	virtual void OnLose() override;

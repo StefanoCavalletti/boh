@@ -63,16 +63,18 @@ void AHumanPlayer::OnPlacing()
 {
 	IsMyTurn = true;
 	AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
-	//GameMode->CurrentGameState = EGameState::WaitingSelection;
+	GameMode->CurrentGameState = EGameState::WaitingSelection;
 }
 
 void AHumanPlayer::OnClick()
 {
+	
 	FHitResult Hit = FHitResult(ForceInit);
 	// GetHitResultUnderCursor function sends a ray from the mouse position and gives the corresponding hit results
 	GetWorld()->GetFirstPlayerController()->GetHitResultUnderCursor(ECollisionChannel::ECC_Pawn, true, Hit);
 
 	AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
+	if (GameMode->IsGameOver) return;
 	switch (GameMode->CurrentGameState) {
 		
 		case EGameState::PlacingBrawler:
@@ -181,9 +183,9 @@ void AHumanPlayer::OnClick()
 						//Muovi il giocatore
 						//FVector2D StartPosition = SelectedUnit->GridPosition;
 						FVector2D EndPosition = Tile->GetGridPosition();
-						GameMode->GField->MoveUnitTo(SelectedUnit, EndPosition); //muove la gameunit
 						GameMode->GField->SetAllTilesWhite();
-						GameMode->CurrentGameState = EGameState::WaitingAction;
+						GameMode->GField->MoveUnitTo(SelectedUnit, EndPosition); //muove la gameunit
+						//GameMode->CurrentGameState = EGameState::WaitingAction;
 						SelectedUnit = nullptr;
 						GameMode->PassIfForced();
 					}

@@ -204,18 +204,6 @@ void AMyGameModeBase::NextPlayerTurn()
 	Players[CurrentPlayer]->OnTurn();
 }
 
-void AMyGameModeBase::RemoveBrawlerButton()
-{
-	UButton* BrawlerButton = Cast<UButton>(GameWidgetPlacing->GetWidgetFromName(TEXT("BrawlerButton")));
-	BrawlerButton->SetVisibility(ESlateVisibility::Collapsed);
-}
-
-void AMyGameModeBase::RemoveSniperButton()
-{
-	UButton* SniperButton = Cast<UButton>(GameWidgetPlacing->GetWidgetFromName(TEXT("SniperButton")));
-	SniperButton->SetVisibility(ESlateVisibility::Collapsed);
-}
-
 FVector AMyGameModeBase::GetRelativeLocationByXYPosition(const int32 InX, const int32 InY)
 {
 	return GField->GetRelativeLocationByXYPosition(InX,InY);
@@ -223,7 +211,7 @@ FVector AMyGameModeBase::GetRelativeLocationByXYPosition(const int32 InX, const 
 
 void AMyGameModeBase::MyTurnSafePass()
 {
-	if (CurrentPlayer == 0) {
+	if (CurrentPlayer == 0 and (CurrentGameState == EGameState::WaitingAction)) {
 		SafePass();
 	}
 }
