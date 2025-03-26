@@ -45,6 +45,8 @@ void ASmartPlayer::OnTurn()
 		return; // return se è finito il giuoco
 	TArray<AGameUnit*> MyUnits;
 	TArray<AGameUnit*> EnemyUnits;
+	AGameUnit* EnemyBrawler = nullptr;
+	TArray<FVector2D> Neighbors = {FVector2D(+1, 0), FVector2D(-1, 0), FVector2D(0, +1), FVector2D(0, -1)};
 	for (AGameUnit* Unit : GameMode->GField->UnitsArray) {
 		if (Unit->Owner == 1) {
 			MyUnits.Add(Unit);
@@ -53,25 +55,19 @@ void ASmartPlayer::OnTurn()
 			if(Unit->HealtPoints > 0) EnemyUnits.Add(Unit);
 		}
 	}
-	AGameUnit* EnemyBrawler = nullptr;
 	for (AGameUnit* Unit : MyUnits) {
 		if (Unit->HealtPoints > 0) {
 			if (Unit->bCanMove) {
 				switch (Unit->UnitType) {
+					//SNIPER MOVEMENT LOGIC
 					case EUnits::SNIPER:
-						
 						for (AGameUnit* GU : EnemyUnits) {
 							if (GU->UnitType == EUnits::BRAWLER) EnemyBrawler = GU;
 						}
+						//If there are no enemys in range in attack range, move towards nearest enemy
 						if (GameMode->GField->AttackableTiles(Unit->GridPosition, Unit->AttackRange, 0).IsEmpty())
 						{
 							TArray<TArray<FVector2D>> Paths;
-							TArray<FVector2D> Neighbors = {
-								FVector2D(+1, 0),
-								FVector2D(-1, 0),
-								FVector2D(0, +1),
-								FVector2D(0, -1),
-							};
 							for (AGameUnit* Enemy : EnemyUnits) {
 								for (FVector2D Neig : Neighbors) {
 									if (GameMode->GField->FindPath(Unit->GridPosition, Enemy->GridPosition + Neig).Num() != 0)
@@ -93,34 +89,27 @@ void ASmartPlayer::OnTurn()
 								ToGo = MinPath.Last();
 							}
 							else {
-								//ToGo = MinPath[Unit->MovementRange + 1];
 								ToGo = MinPath[Unit->MovementRange];
 							}
 							GameMode->GField->MoveUnitTo(Unit, ToGo);
 							GameMode->PassIfForced();
-						}
+						}		//If the enemy brawler is in counter attack range, move out before shooting, avoiding counter attack
 						else if (EnemyBrawler and (FVector2D::Distance(Unit->GridPosition, EnemyBrawler->GridPosition) == 1.0f))
 						{
-							//if (FVector2D::Distance(Unit->GridPosition, EnemyBrawler->GridPosition) == 1.0f) {
 								TArray<ATile*> AccessibleTiles = GameMode->GField->ReachableTiles(Unit->GridPosition, Unit->MovementRange, 0);
 								ATile* Tile;
 								do {
 									Tile = AccessibleTiles[FMath::RandRange(0, AccessibleTiles.Num() - 1)];
 								} while (FVector2D::Distance(Tile->GetGridPosition(), EnemyBrawler->GridPosition) == 1.0f);
 								GameMode->GField->MoveUnitTo(Unit, Tile->GetGridPosition());
-							//}
 						}
-						else
-						{
+						else {   //if there are enemys in attack range, get closer but not too much
 							TArray<TArray<FVector2D>> Paths;
-							TArray<FVector2D> Neighbors = {
-								FVector2D(+1, 0),
-								FVector2D(-1, 0),
-								FVector2D(0, +1),
-								FVector2D(0, -1),
-							};
-							for (AGameUnit* Enemy : EnemyUnits) {
-								for (FVector2D Neig : Neighbors) {
+							
+							for (AGameUnit* Enemy : EnemyUnits) 
+							{
+								for (FVector2D Neig : Neighbors) 
+								{
 									if (GameMode->GField->FindPath(Unit->GridPosition, Enemy->GridPosition + Neig).Num() != 0)
 										Paths.Add(GameMode->GField->FindPath(Unit->GridPosition, Enemy->GridPosition + Neig));
 								}
@@ -128,9 +117,11 @@ void ASmartPlayer::OnTurn()
 							if (Paths.Num() == 0) return;
 							UE_LOG(LogTemp, Warning, TEXT("PATHS DIM %d"), Paths.Num());
 							TArray<FVector2D> MinPath = Paths.Last();
-							for (TArray<FVector2D> Pa : Paths) {
+							for (TArray<FVector2D> Pa : Paths)
+							{
 								UE_LOG(LogTemp, Warning, TEXT("PATH DIM %d"), Pa.Num());
-								if (Pa.Num() < MinPath.Num() and Pa.Num() > 1) {
+								if (Pa.Num() < MinPath.Num() and Pa.Num() > 1)
+								{
 									MinPath = Pa;
 								}
 							}
@@ -141,29 +132,23 @@ void ASmartPlayer::OnTurn()
 									ToGo = MinPath.Last();
 								}
 								else {
-									//ToGo = MinPath[Unit->MovementRange + 1];
 									ToGo = MinPath[Unit->MovementRange];
 								}
 								GameMode->GField->MoveUnitTo(Unit, ToGo);
 								GameMode->PassIfForced();
-							}
-							else {
+							} else { // otherwise just don't move 
 								Unit->bCanMove = false;
 								OnTurn();
 							}
 						}
 					break;
 
+					// BRAWLER MOVEMENT LOGIC
 					case EUnits::BRAWLER:
-						//Priorità andare sotto quello piu vicino
+						//Walk to the closest enemy
 						if (GameMode->GField->AttackableTiles(Unit->GridPosition, Unit->AttackRange, 0).IsEmpty()) {
 							TArray<TArray<FVector2D>> Paths;
-							TArray<FVector2D> Neighbors = {
-								FVector2D(+1, 0),
-								FVector2D(-1, 0),
-								FVector2D(0, +1),
-								FVector2D(0, -1),
-							};
+							
 							for (AGameUnit* Enemy : EnemyUnits) {
 								for (FVector2D Neig : Neighbors) {
 									if(GameMode->GField->FindPath(Unit->GridPosition, Enemy->GridPosition + Neig).Num() != 0)
@@ -185,27 +170,21 @@ void ASmartPlayer::OnTurn()
 								ToGo = MinPath.Last();
 							}
 							else {
-								//ToGo = MinPath[Unit->MovementRange + 1];
 								ToGo = MinPath[Unit->MovementRange];
 							}
 							GameMode->GField->MoveUnitTo(Unit, ToGo);
 							GameMode->PassIfForced();
 						}
-						else {
+						else {//if already in attack range just don't move
 							Unit->bCanMove = false;
 							OnTurn();
 						}
 					break;
 				}
-				/*TArray<ATile*> AccessibleTiles = GameMode->GField->ReachableTiles(Unit->GridPosition, Unit->MovementRange, 0);
-				UE_LOG(LogTemp, Warning, TEXT("Accessible tiles %d"), AccessibleTiles.Num());
-				ATile* Tile = AccessibleTiles[FMath::RandRange(0, AccessibleTiles.Num() - 1)];
-				GameMode->GField->MoveUnitTo(Unit, Tile->GetGridPosition());
-				GameMode->PassIfForced();*/
 				return;
 			}
 			else if (Unit->bCanAttack)
-			{
+			{ // Attack random unit in attack range
 				TArray<ATile*> AttackableTiles = GameMode->GField->AttackableTiles(Unit->GridPosition, Unit->AttackRange, 0);
 				UE_LOG(LogTemp, Warning, TEXT("Attackable tiles %d"), AttackableTiles.Num());
 				if (!AttackableTiles.IsEmpty()) {
@@ -228,12 +207,9 @@ void ASmartPlayer::OnTurn()
 			}
 		}
 	}
+	//If the game is not over i check i check if the turn is over
 	if (!GameMode->IsGameOver) {
-		//GameMode->NextPlayerTurn();
 		GameMode->PassIfForced();
-	}
-	else {
-		//GameMode->GField->ResetField();
 	}
 }
 
@@ -246,7 +222,7 @@ void ASmartPlayer::OnLose()
 }
 
 void ASmartPlayer::OnPlacing()
-{
+{ // random placing
 	AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
 	GameMode->CurrentGameState = EGameState::ComputerPlacing;
 	FTimerHandle TimerHandle;
@@ -292,4 +268,3 @@ void ASmartPlayer::OnPlacing()
 			}
 		}, 1.5f, false);
 }
-

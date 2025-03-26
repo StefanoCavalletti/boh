@@ -119,23 +119,22 @@ void UMyGameInstance::AddLogMessage(FString Message)
 {
 	if (!LogScrollBox) return;
 
-	// Crea un nuovo TextBlock per il messaggio
+	// Create new text block for the message
 	UTextBlock* NewMessage = NewObject<UTextBlock>(this);
 	NewMessage->SetText(FText::FromString(Message));
-	NewMessage->Font.Size = 18; // Imposta la dimensione del testo
+	NewMessage->Font.Size = 18; 
 	LogScrollBox->AddChild(NewMessage);
 
-	// Aggiungi alla lista dei messaggi
+	// Add to logs 
 	LogMessages.Add(NewMessage);
 
-	// Se superiamo il massimo, rimuoviamo il più vecchio
+	// Remove oldest message
 	if (LogMessages.Num() > MaxLogLines)
 	{
 		UTextBlock* OldMessage = LogMessages[0];
 		LogScrollBox->RemoveChild(OldMessage);
 		LogMessages.RemoveAt(0);
 	}
-
-	// Scorri in basso automaticamente
+	// Scroll to last message
 	LogScrollBox->ScrollToEnd();
 }

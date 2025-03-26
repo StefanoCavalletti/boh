@@ -80,7 +80,6 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	
-
 public:	
 	FVector GetRelativeLocationByXYPosition(const int32 InX, const int32 InY) const;
 	// Called every frame

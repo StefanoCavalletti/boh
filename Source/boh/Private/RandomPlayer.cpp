@@ -35,58 +35,13 @@ void ARandomPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 
 }
 
-/*void ARandomPlayer::OnTurn()
-{
-	UE_LOG(LogTemp, Warning, TEXT("RANDOM AI TURN"));
-	AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
-	TArray<AGameUnit*> Units;
-	for (AGameUnit* Unit : GameMode->GField->UnitsArray) {
-		if (Unit->Owner == GameMode->CurrentPlayer and Unit->HealtPoints > 0) {
-			Units.Add(Unit);
-		}
-	}
-	while (!Units.IsEmpty()) {
-		int32 Index = FMath::RandRange(0, Units.Num() - 1);
-		AGameUnit* Unit = Units[Index];
-		Unit->bCanMove = FMath::RandBool();
-		Unit->bCanAttack = FMath::RandBool();
-		if (Unit->bCanMove) {
-			TArray<ATile*> AccessibleTiles = GameMode->GField->ReachableTiles(Unit->GridPosition, Unit->MovementRange,0);
-			UE_LOG(LogTemp, Warning, TEXT("Accessible tiles %d"), AccessibleTiles.Num());
-			ATile* Tile = AccessibleTiles[FMath::RandRange(0, AccessibleTiles.Num() - 1)];
-			GameMode->GField->MoveUnitTo(Unit, Tile->GetGridPosition());
-		}
-		if (Unit->bCanAttack) {
-			TArray<ATile*> AttackableTiles = GameMode->GField->AttackableTiles(Unit->GridPosition, Unit->AttackRange,0);
-			UE_LOG(LogTemp, Warning, TEXT("Attackable tiles %d"), AttackableTiles.Num());
-			if (!AttackableTiles.IsEmpty()) {
-				ATile* TileToAttack = AttackableTiles[FMath::RandRange(0, AttackableTiles.Num() - 1)];
-				for (AGameUnit* UnitToAttack : GameMode->GField->UnitsArray) {
-					if (UnitToAttack->GridPosition == TileToAttack->GetGridPosition() and UnitToAttack->Owner != GameMode->CurrentPlayer) {
-						GameMode->GField->Attack(Unit,UnitToAttack);
-					}
-				}
-			}
-		}
-		Units.RemoveAt(Index);
-	}
-	if (!GameMode->IsGameOver) {
-		GameMode->NextPlayerTurn();
-		//GameMode->PassIfForced();
-	}
-	else {
-		//GameMode->GField->ResetField();
-	}
-}*/
-
 void ARandomPlayer::OnTurn()
 {
 	UE_LOG(LogTemp, Warning, TEXT("RANDOM AI TURN"));
 	AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
 	if (GameMode->IsGameOver) return; 
-	GameMode->PassIfForced(); //DEVO FARE RETURN SE PASS IF FORCED RITORNA TRUE
-	if (GameMode->CurrentPlayer == 0)
-		return;// SE PASSA TERMINO
+	GameMode->PassIfForced(); 
+	if (GameMode->CurrentPlayer == 0) return;// SE PASSA TERMINO
 	for (AGameUnit* Unit : GameMode->GField->UnitsArray) {
 		if (Unit->Owner == GameMode->CurrentPlayer and Unit->HealtPoints > 0) {
 			if (Unit->bCanMove) {
@@ -185,7 +140,3 @@ void ARandomPlayer::OnPlacing()
 			}
 		}, 1.5f, false); 
 }
-
-
-
-

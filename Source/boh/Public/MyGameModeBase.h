@@ -22,7 +22,6 @@ enum class EGameState : uint8
 
 
 class AActor;
-struct FPosition;
 
 UCLASS()
 class BOH_API AMyGameModeBase : public AGameModeBase

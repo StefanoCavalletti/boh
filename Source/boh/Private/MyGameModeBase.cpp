@@ -21,7 +21,6 @@ void AMyGameModeBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	//ATTT_HumanPlayer* HumanPlayer = *TActorIterator<ATTT_HumanPlayer>(GetWorld());
 	AHumanPlayer* HumanPlayer = GetWorld()->GetFirstPlayerController()->GetPawn<AHumanPlayer>();
 
 	if (!IsValid(HumanPlayer))
@@ -47,14 +46,18 @@ void AMyGameModeBase::BeginPlay()
 
 	// Human Player = 0
 	Players.Add(HumanPlayer);
-
+	
+	//RANDOM PLAYER
 	//auto* AI = GetWorld()->SpawnActor<ARandomPlayer>(FVector(), FRotator());
+
+	//SMART(?) PLAYER
 	auto* AI = GetWorld()->SpawnActor<ASmartPlayer>(FVector(), FRotator());
+	
 	// AI player = 1
 	Players.Add(AI);
+	
 	UMyGameInstance* GameInstance = Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
 	GameInstance->SetUpStarting();
-	//this->StartGame();
 }
 
 void AMyGameModeBase::StartGame()
@@ -68,16 +71,6 @@ void AMyGameModeBase::StartGame()
 	GField->FieldBuilder();
 	PlayerToPlace = { EUnits::BRAWLER,  EUnits::SNIPER };
 	AIToPlace = { EUnits::BRAWLER,  EUnits::SNIPER };
-	//GameWidget = CreateWidget<UUserWidget>(GetWorld(), GameWidgetClass);
-	//GameWidget->AddToViewport();
-	//GameWidget->RemoveFromParent();
-	//UTextBlock* TextBlock_0 = nullptr;
-	//if (GameWidget)
-	//{
-		// Se la variabile è esposta e pubblica, accediamo direttamente a essa
-		//TextBlock_0 = Cast<UTextBlock>(GameWidget->GetWidgetFromName(TEXT("TextBlock_0")));
-		//BrawlerButton->OnClicked.AddDynamic(this, &AMyGameModeBase::PlaceUnits );
-	//}
 	CurrentPlayer = FMath::RandRange(0, 1); // Se 0 inizia Human, altrimenti AI
 	if(CurrentPlayer==0){
 		GameInstance->SetMessagge(TEXT("Human Starts Placing"));
@@ -95,25 +88,11 @@ void AMyGameModeBase::PlaceUnits()
 {
 	UMyGameInstance* GameInstance = Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
 	GameInstance->SetUpPlacing();
-	/*GameWidgetPlacing = CreateWidget<UUserWidget>(GetWorld(), WidgetPlacingClass);
-	GameWidgetPlacing->AddToViewport();
-	
-	UButton* BrawlerButton = Cast<UButton>(GameWidgetPlacing->GetWidgetFromName(TEXT("BrawlerButton")));
-	UButton* SniperButton = Cast<UButton>(GameWidgetPlacing->GetWidgetFromName(TEXT("SniperButton")));
-	BrawlerButton->OnClicked.AddDynamic(this, &AMyGameModeBase::SetPlacingUnitTypeBrawler);
-	SniperButton->OnClicked.AddDynamic(this, &AMyGameModeBase::SetPlacingUnitTypeSniper);
-	*/
 	Players[CurrentPlayer]->OnPlacing();
-	//Players[0]->OnPlacing();
-	//CurrentPlayer = this->GetNextPlayer(CurrentPlayer);
 }
 
 void AMyGameModeBase::SetupAndStartTurns()
 {
-	//GameWidgetTurns = CreateWidget<UUserWidget>(GetWorld(), WidgetTurnsClass);
-	//GameWidgetTurns->AddToViewport();
-	//UButton* PassButton = Cast<UButton>(GameWidgetTurns->GetWidgetFromName(TEXT("PassButton")));
-	//PassButton->OnClicked.AddDynamic(this, &AMyGameModeBase::SafePass);
 	UMyGameInstance* GameInstance = Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
 	GameInstance->SetUpTurns();
 	this->NextPlayerTurn();

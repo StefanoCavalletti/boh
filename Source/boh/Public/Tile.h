@@ -45,9 +45,6 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ChangeColor(FLinearColor NewColor);
 
-	bool bIsInMoveRange;
-	bool bIsInAttackRange;
-
 private:
 	UMaterialInstanceDynamic* DynamicMaterial;
 

@@ -32,6 +32,7 @@ void AGameField::BeginPlay()
 }
 
 void AGameField::FieldBuilder() {
+	// Spawns the 25x25 tiles
 	for (int32 IndexX = 0 ; IndexX < Size; IndexX++) {
 		for (int32 IndexY = 0; IndexY < Size; IndexY++) {
 			FVector Location = AGameField::GetRelativeLocationByXYPosition(IndexX, IndexY);
@@ -71,13 +72,6 @@ void AGameField::FieldBuilder() {
 			Index--;
 		}
 	}
-	/*for (int32 IX = 0; IX < Size; IX++) {
-		for (int32 IY = 0; IY < Size; IY++) {
-			ATile* tile = *TileMap.Find(FVector2D(IX, IY));
-			bool ob = tile->IsObstacle;
-			UE_LOG(LogTemp, Warning, TEXT("X: %d , Y: %d , Valore %s"), IX, IY , ob ? TEXT("True") : TEXT("False"));
-		}
-	} DEBUG PURPOSES */
 }
 
 FString AGameField::ConvertCoord(FVector2D Coord)
@@ -137,32 +131,6 @@ int32 AGameField::AccessibleTiles() {
 	return Count;
 }
 
-/*void AGameField::ExploreTile(ATile& Target, int32& c, TArray<FVector2D>& ca) {
-	FVector2D pos = Target.GetGridPosition();
-	int32 x = int(pos.X);
-	int32 y = int(pos.Y);
-	if (ca.Find(FVector2D(x, y)) != INDEX_NONE) {
-		return;
-	}
-	ca.Add(Target.GetGridPosition());
-	c++;
-	for (int i = -1; i <= 1; i++) {
-		for (int j = -1; j <= 1; j++) {
-			if ((i!=0 and j == 0) or ( j != 0 and i == 0) ) { // SOLO MOVIMENTI DIRETTI NO OBLIQUI
-				if (x + i >= 0 and x + i < Size and y + j >= 0 and y + j < Size) {
-					if (ca.Find(FVector2D(x+i, y+j)) == INDEX_NONE) {
-						if (!(*TileMap.Find(FVector2D(x+i, y+j)))->IsObstacle) {
-							c++;
-							ca.Add(FVector2D(x+i, y+j));
-							ExploreTile((**TileMap.Find(FVector2D(x+i, y+j))), c, ca );
-						}
-					}
-				}
-			}
-		}
-	}
-}*/
-
 void AGameField::ExploreTile(ATile& Target, int32& c, TArray<FVector2D>& ca) {
 	FVector2D pos = Target.GetGridPosition();
 	int32 x = int(pos.X);
@@ -214,26 +182,6 @@ TArray<ATile*> AGameField::ReachableTiles(FVector2D Pos, int32 Range, int32 Star
 	return Tiles;
 }
 
-/*void AGameField::ShowReachableTiles(FVector2D Pos, int32 Range, int32 Start)
-{	
-	if (Start <= Range) {
-		ATile** Tile = TileMap.Find(Pos);
-		if ( ((*Tile)->TileStatus == ETileStatus::EMPTY) or (Start == 0)) { // Voglio illuminare quella sotto anche se (ovviamente) è occupata
-			int32 x = Pos.X, y = Pos.Y;
-			(*Tile)->ChangeColor(FLinearColor::Green);
-			(*Tile)->TileColor = ETileColor::GREEN;
-			for (int i = -1; i <= 1; i++) { // Chiamo ricorsivamente sulle celle valide vicine
-				for (int j = -1; j <= 1; j++) {
-					if ((i != 0 && j == 0) || (j != 0 && i == 0)) { // SOLO MOVIMENTI DIRETTI NO OBLIQUI
-						if (x + i >= 0 && x + i < Size && y + j >= 0 && y + j < Size) {
-							ShowReachableTiles(FVector2D(x + i, y + j), Range, Start + 1);
-						}
-					}
-				}
-			}
-		}
-	}
-}*/
 void AGameField::ShowReachableTiles(FVector2D Pos, int32 Range, int32 Start)
 {
 	TArray<ATile*> Tiles = ReachableTiles(Pos, Range, Start);
@@ -283,32 +231,6 @@ void AGameField::ShowAttackableTiles(FVector2D Pos, int32 Range, int32 Start) {
 		Tile->TileColor = ETileColor::RED;
 	}
 }
-/*void AGameField::ShowAttackableTiles(FVector2D Pos, int32 Range, int32 Start)
-{
-	if (Start <= Range) {
-		ATile** Tile = TileMap.Find(Pos);
-		int32 x = Pos.X, y = Pos.Y;
-		if ((*Tile)->TileStatus == ETileStatus::OCCUPIED) {
-			FVector2D Pos = (*Tile)->GetGridPosition();
-			for (int32 Index = 0; Index < UnitsArray.Num(); Index++) {
-				AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
-				if (UnitsArray[Index]->GridPosition == Pos and UnitsArray[Index]->Owner != GameMode->CurrentPlayer) {
-					(*Tile)->ChangeColor(FLinearColor::Red);
-					(*Tile)->TileColor = ETileColor::RED;
-				}
-			}
-		}
-		for (int i = -1; i <= 1; i++) { // Chiamo ricorsivamente sulle celle valide vicine
-			for (int j = -1; j <= 1; j++) {
-				if ((i != 0 && j == 0) || (j != 0 && i == 0)) { // SOLO MOVIMENTI DIRETTI NO OBLIQUI
-					if (x + i >= 0 && x + i < Size && y + j >= 0 && y + j < Size) {
-						ShowAttackableTiles(FVector2D(x + i, y + j), Range, Start + 1);
-					}
-				}
-			}
-		}
-	}
-}*/
 
 void AGameField::SetAllTilesWhite()
 {
@@ -323,36 +245,9 @@ void AGameField::SetAllTilesWhite()
 	}
 }
 
-/*void AGameField::MoveUnitTo(AGameUnit* Unit, FVector2D Dest)
-{
-	FString Player = Unit->Owner == 0 ? TEXT("HP: ") : TEXT("CP: ");
-	FString UT = Unit->UnitType == EUnits::SNIPER ? TEXT("S ") : TEXT("B ");
-	UMyGameInstance* GameInstance = Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
-	GameInstance->AddLogMessage(Player + UT + ConvertCoord(Unit->GridPosition) + TEXT(" -> ") + ConvertCoord(Dest));
-
-	(*TileMap.Find(Unit->GridPosition))->TileStatus = ETileStatus::EMPTY;
-	TArray<FVector2D> BestPath = FindPath(Unit->GridPosition, Dest);
-	for (const FVector2D& Vector : BestPath)
-	{
-		UE_LOG(LogTemp, Log, TEXT("TILE COORD: X = %f, Y = %f"), Vector.X, Vector.Y);
-	}
-	for (int32 Index = 0; Index < BestPath.Num(); Index++) {			//IL Problema è che TimeSium Ritarda la chiamata della funzione in modo asincrono e quindi quando la funzione viene chiamata bestpath non esiste più
-		FTimerHandle TimerHandle;										//Risolto con lamda ma ci sono altri ovvi problemi :////
-
-		FVector2D NextTile = BestPath[Index];
-		GetWorld()->GetTimerManager().SetTimer(TimerHandle, [this, NextTile, Unit]()
-			{
-				UE_LOG(LogTemp, Warning, TEXT("FOLLOWING PATH"));
-				Unit->SetActorLocation(GetRelativeLocationByXYPosition(NextTile.X, NextTile.Y) + FVector(0, 0, 2));
-			}, 0.3f * (Index+1), false);
-	}
-	(*TileMap.Find(Dest))->TileStatus = ETileStatus::OCCUPIED; //FORSE POSSO RISOLVERE NON FACENDO RITORNARE FINO A QUANDO UN CONTATORE NON ARRIVA A BestPath.Num con un WHILE
-	Unit->GridPosition = Dest;
-	Unit->bCanMove = false;
-}*/
-
 void AGameField::MoveUnitTo(AGameUnit* Unit, FVector2D Dest)
 {
+	if (!Unit) return;
 	FString Player = Unit->Owner == 0 ? TEXT("HP: ") : TEXT("CP: ");
 	FString UT = Unit->UnitType == EUnits::SNIPER ? TEXT("S ") : TEXT("B ");
 	UMyGameInstance* GameInstance = Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
@@ -369,11 +264,15 @@ void AGameField::MoveUnitTo(AGameUnit* Unit, FVector2D Dest)
 	}
 	// Aspetta che MoveAlongPath finisca prima di aggiornare lo stato dell'unità
 	if (GameMode->CurrentPlayer == 1) {
+		//Set the reachable tiles to green
 		ShowReachableTiles(Unit->GridPosition, Unit->MovementRange, 0);
 		FTimerHandle TimerHandle;
+		//Wait before putting them back to white
 		GetWorld()->GetTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this, Unit, BestPath, Dest, GameMode]()
 			{
+				//Set the tile back to white
 				SetAllTilesWhite();
+				//Set the path tiles to green
 				ShowPath(BestPath);
 				MoveAlongPath(Unit, BestPath, 0, [this, Unit, Dest, GameMode]()
 					{
@@ -384,11 +283,9 @@ void AGameField::MoveUnitTo(AGameUnit* Unit, FVector2D Dest)
 						GameMode->Players[GameMode->CurrentPlayer]->OnTurn();
 					});
 			}), 2.0f, false);
-		//Metti le tile verdi
-		//Aspetta 1 sec
-		//Rimetti bianche
 	}
 	else {
+		//Set the path tiles to green
 		ShowPath(BestPath);
 		MoveAlongPath(Unit, BestPath, 0, [this, Unit, Dest, GameMode]()
 			{

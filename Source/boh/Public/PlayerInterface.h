@@ -23,7 +23,6 @@ class BOH_API IPlayerInterface
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 	int32 PlayerNumber;
-	// Called to bind functionality to input
 
 	virtual void OnTurn() = 0;
 	virtual void OnWin() = 0;
