@@ -39,6 +39,7 @@ void ARandomPlayer::OnTurn()
 {
 	UE_LOG(LogTemp, Warning, TEXT("RANDOM AI TURN"));
 	AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
+	GameMode->CurrentGameState = EGameState::WaitingAction;
 	if (GameMode->IsGameOver) return; 
 	GameMode->PassIfForced(); 
 	if (GameMode->CurrentPlayer == 0) return;// SE PASSA TERMINO
@@ -62,6 +63,7 @@ void ARandomPlayer::OnTurn()
 						if (UnitToAttack->GridPosition == TileToAttack->GetGridPosition() and UnitToAttack->Owner != GameMode->CurrentPlayer) {
 							GameMode->GField->ShowAttackableTiles(Unit->GridPosition, Unit->AttackRange, 0);
 							FTimerHandle TimerHandle;
+							GameMode->CurrentGameState = EGameState::MovingUnit;
 							GetWorld()->GetTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this, GameMode,Unit,UnitToAttack]()
 							{
 								GameMode->GField->SetAllTilesWhite();

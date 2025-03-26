@@ -38,6 +38,7 @@ void ASmartPlayer::OnTurn()
 {
 	UE_LOG(LogTemp, Warning, TEXT("SMART COMPUTER TURN"));
 	AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
+	GameMode->CurrentGameState = EGameState::WaitingAction;
 	GameMode->PassIfForced(); //DEVO FARE RETURN SE PASS IF FORCED RITORNA TRUE
 	if (GameMode->CurrentPlayer == 0)
 		return; // SE PASSA TERMINO
@@ -100,6 +101,7 @@ void ASmartPlayer::OnTurn()
 								ATile* Tile;
 								do {
 									Tile = AccessibleTiles[FMath::RandRange(0, AccessibleTiles.Num() - 1)];
+									if (AccessibleTiles.Num() == 1) break;
 								} while (FVector2D::Distance(Tile->GetGridPosition(), EnemyBrawler->GridPosition) == 1.0f);
 								GameMode->GField->MoveUnitTo(Unit, Tile->GetGridPosition());
 						}
@@ -192,6 +194,7 @@ void ASmartPlayer::OnTurn()
 					for (AGameUnit* UnitToAttack : GameMode->GField->UnitsArray) {
 						if (UnitToAttack->GridPosition == TileToAttack->GetGridPosition() and UnitToAttack->Owner != GameMode->CurrentPlayer) {
 							GameMode->GField->ShowAttackableTiles(Unit->GridPosition, Unit->AttackRange, 0);
+							GameMode->CurrentGameState = EGameState::MovingUnit;
 							FTimerHandle TimerHandle;
 							GetWorld()->GetTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this, GameMode, Unit, UnitToAttack]()
 								{

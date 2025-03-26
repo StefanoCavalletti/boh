@@ -17,6 +17,7 @@ enum class EGameState : uint8
 	ComputerPlacing UMETA(DisplayName = "ComputerPlacing"),
 	MovingUnit     UMETA(DisplayName = "MovingUnit"),
 	WaitingSelection  UMETA(DisplayName = "WaitingSelection"),
+	UnitSelected	UMETA(DisplayName = "UnitSelected"),
 	WaitingAction	UMETA(DisplayName = "WaitingAction")
 };
 

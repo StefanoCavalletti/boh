@@ -159,13 +159,13 @@ void AHumanPlayer::OnClick()
 						FVector2D Position = GameUnit->GridPosition;
 						if (GameUnit->bCanMove) {
 							UE_LOG(LogTemp, Warning, TEXT("PUO MUOVERE"));
-							GameMode->CurrentGameState = EGameState::MovingUnit;
+							GameMode->CurrentGameState = EGameState::UnitSelected;
 							SelectedUnit = GameUnit;
 							GameMode->GField->ShowReachableTiles(Position, GameUnit->MovementRange, 0);
 						}
 						if (GameUnit->bCanAttack and !GameMode->GField->AttackableTiles(GameUnit->GridPosition, GameUnit->AttackRange, 0).IsEmpty()) {
 							UE_LOG(LogTemp, Warning, TEXT("PUO ATTACCARE"));
-							GameMode->CurrentGameState = EGameState::MovingUnit;
+							GameMode->CurrentGameState = EGameState::UnitSelected;
 							SelectedUnit = GameUnit;
 							GameMode->GField->ShowAttackableTiles(Position, GameUnit->AttackRange, 0);
 						}
@@ -175,7 +175,7 @@ void AHumanPlayer::OnClick()
 			}
 		break;
 
-		case EGameState::MovingUnit:
+		case EGameState::UnitSelected:
 			if (Hit.bBlockingHit and IsMyTurn)
 			{
 				UE_LOG(LogTemp, Warning, TEXT("MIO TURNO MOVING HIT!!"));

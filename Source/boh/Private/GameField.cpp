@@ -496,7 +496,10 @@ void AGameField::ResetField()
 {
 	AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
 	if (!GetWorld()) return;
-	if (GameMode->CurrentGameState == EGameState::ComputerPlacing or GameMode->CurrentGameState == EGameState::MovingUnit) return;
+	if (!GameMode->IsGameOver) {
+		if (GameMode->CurrentGameState == EGameState::ComputerPlacing or GameMode->CurrentGameState == EGameState::MovingUnit) return;
+		if (GameMode->CurrentPlayer != 0) return;
+	}
 
 	TArray<AActor*> FoundActors;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ObstacleClass, FoundActors);
