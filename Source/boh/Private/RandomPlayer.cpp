@@ -83,10 +83,10 @@ void ARandomPlayer::OnTurn()
 {
 	UE_LOG(LogTemp, Warning, TEXT("RANDOM AI TURN"));
 	AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
-	if (GameMode->IsGameOver) return;
+	if (GameMode->IsGameOver) return; 
 	GameMode->PassIfForced(); //DEVO FARE RETURN SE PASS IF FORCED RITORNA TRUE
 	if (GameMode->CurrentPlayer == 0)
-		return;
+		return;// SE PASSA TERMINO
 	for (AGameUnit* Unit : GameMode->GField->UnitsArray) {
 		if (Unit->Owner == GameMode->CurrentPlayer and Unit->HealtPoints > 0) {
 			if (Unit->bCanMove) {

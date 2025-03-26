@@ -40,26 +40,168 @@ void ASmartPlayer::OnTurn()
 	AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
 	GameMode->PassIfForced(); //DEVO FARE RETURN SE PASS IF FORCED RITORNA TRUE
 	if (GameMode->CurrentPlayer == 0)
-		return;
+		return; // SE PASSA TERMINO
+	if (GameMode->IsGameOver)
+		return; // return se è finito il giuoco
+	TArray<AGameUnit*> MyUnits;
+	TArray<AGameUnit*> EnemyUnits;
 	for (AGameUnit* Unit : GameMode->GField->UnitsArray) {
-		if (Unit->Owner == GameMode->CurrentPlayer and Unit->HealtPoints > 0) {
+		if (Unit->Owner == 1) {
+			MyUnits.Add(Unit);
+		}
+		else {
+			if(Unit->HealtPoints > 0) EnemyUnits.Add(Unit);
+		}
+	}
+	AGameUnit* EnemyBrawler = nullptr;
+	for (AGameUnit* Unit : MyUnits) {
+		if (Unit->HealtPoints > 0) {
 			if (Unit->bCanMove) {
 				switch (Unit->UnitType) {
 					case EUnits::SNIPER:
-						//Muoviti verso le unita nemiche se sono lontane
+						
+						for (AGameUnit* GU : EnemyUnits) {
+							if (GU->UnitType == EUnits::BRAWLER) EnemyBrawler = GU;
+						}
+						if (GameMode->GField->AttackableTiles(Unit->GridPosition, Unit->AttackRange, 0).IsEmpty())
+						{
+							TArray<TArray<FVector2D>> Paths;
+							TArray<FVector2D> Neighbors = {
+								FVector2D(+1, 0),
+								FVector2D(-1, 0),
+								FVector2D(0, +1),
+								FVector2D(0, -1),
+							};
+							for (AGameUnit* Enemy : EnemyUnits) {
+								for (FVector2D Neig : Neighbors) {
+									if (GameMode->GField->FindPath(Unit->GridPosition, Enemy->GridPosition + Neig).Num() != 0)
+										Paths.Add(GameMode->GField->FindPath(Unit->GridPosition, Enemy->GridPosition + Neig));
+								}
+							}
+							if (Paths.Num() == 0) return;
+							UE_LOG(LogTemp, Warning, TEXT("PATHS DIM %d"), Paths.Num());
+							TArray<FVector2D> MinPath = Paths.Last();
+							for (TArray<FVector2D> Pa : Paths) {
+								UE_LOG(LogTemp, Warning, TEXT("PATH DIM %d"), Pa.Num());
+								if (Pa.Num() < MinPath.Num() and Pa.Num() > 1) {
+									MinPath = Pa;
+								}
+							}
+							FVector2D ToGo;
+							UE_LOG(LogTemp, Warning, TEXT("MINPATH DIM %d"), MinPath.Num());
+							if (MinPath.Num() - 1 <= Unit->MovementRange) {
+								ToGo = MinPath.Last();
+							}
+							else {
+								//ToGo = MinPath[Unit->MovementRange + 1];
+								ToGo = MinPath[Unit->MovementRange];
+							}
+							GameMode->GField->MoveUnitTo(Unit, ToGo);
+							GameMode->PassIfForced();
+						}
+						else if (EnemyBrawler and (FVector2D::Distance(Unit->GridPosition, EnemyBrawler->GridPosition) == 1.0f))
+						{
+							//if (FVector2D::Distance(Unit->GridPosition, EnemyBrawler->GridPosition) == 1.0f) {
+								TArray<ATile*> AccessibleTiles = GameMode->GField->ReachableTiles(Unit->GridPosition, Unit->MovementRange, 0);
+								ATile* Tile;
+								do {
+									Tile = AccessibleTiles[FMath::RandRange(0, AccessibleTiles.Num() - 1)];
+								} while (FVector2D::Distance(Tile->GetGridPosition(), EnemyBrawler->GridPosition) == 1.0f);
+								GameMode->GField->MoveUnitTo(Unit, Tile->GetGridPosition());
+							//}
+						}
+						else
+						{
+							TArray<TArray<FVector2D>> Paths;
+							TArray<FVector2D> Neighbors = {
+								FVector2D(+1, 0),
+								FVector2D(-1, 0),
+								FVector2D(0, +1),
+								FVector2D(0, -1),
+							};
+							for (AGameUnit* Enemy : EnemyUnits) {
+								for (FVector2D Neig : Neighbors) {
+									if (GameMode->GField->FindPath(Unit->GridPosition, Enemy->GridPosition + Neig).Num() != 0)
+										Paths.Add(GameMode->GField->FindPath(Unit->GridPosition, Enemy->GridPosition + Neig));
+								}
+							}
+							if (Paths.Num() == 0) return;
+							UE_LOG(LogTemp, Warning, TEXT("PATHS DIM %d"), Paths.Num());
+							TArray<FVector2D> MinPath = Paths.Last();
+							for (TArray<FVector2D> Pa : Paths) {
+								UE_LOG(LogTemp, Warning, TEXT("PATH DIM %d"), Pa.Num());
+								if (Pa.Num() < MinPath.Num() and Pa.Num() > 1) {
+									MinPath = Pa;
+								}
+							}
+							FVector2D ToGo;
+							UE_LOG(LogTemp, Warning, TEXT("MINPATH DIM %d"), MinPath.Num());
+							if (MinPath.Num() > 10) {
+								if (MinPath.Num() - 1 <= Unit->MovementRange) {
+									ToGo = MinPath.Last();
+								}
+								else {
+									//ToGo = MinPath[Unit->MovementRange + 1];
+									ToGo = MinPath[Unit->MovementRange];
+								}
+								GameMode->GField->MoveUnitTo(Unit, ToGo);
+								GameMode->PassIfForced();
+							}
+							else {
+								Unit->bCanMove = false;
+								OnTurn();
+							}
+						}
 					break;
 
 					case EUnits::BRAWLER:
-						//Priorità andare sotto lo sniper
+						//Priorità andare sotto quello piu vicino
+						if (GameMode->GField->AttackableTiles(Unit->GridPosition, Unit->AttackRange, 0).IsEmpty()) {
+							TArray<TArray<FVector2D>> Paths;
+							TArray<FVector2D> Neighbors = {
+								FVector2D(+1, 0),
+								FVector2D(-1, 0),
+								FVector2D(0, +1),
+								FVector2D(0, -1),
+							};
+							for (AGameUnit* Enemy : EnemyUnits) {
+								for (FVector2D Neig : Neighbors) {
+									if(GameMode->GField->FindPath(Unit->GridPosition, Enemy->GridPosition + Neig).Num() != 0)
+										Paths.Add(GameMode->GField->FindPath(Unit->GridPosition, Enemy->GridPosition+Neig));
+								}
+							}
+							if (Paths.Num() == 0) return;
+							UE_LOG(LogTemp, Warning, TEXT("PATHS DIM %d"), Paths.Num());
+							TArray<FVector2D> MinPath = Paths.Last(); // SE l'ultimo è 0 è un problema, devo risolvere
+							for (TArray<FVector2D> Pa : Paths) {
+								UE_LOG(LogTemp, Warning, TEXT("PATH DIM %d"), Pa.Num());
+								if (Pa.Num() < MinPath.Num() and Pa.Num() > 1) {
+									MinPath = Pa;
+								}
+							}
+							FVector2D ToGo;
+							UE_LOG(LogTemp, Warning, TEXT("MINPATH DIM %d"), MinPath.Num());
+							if (MinPath.Num() - 1 <= Unit->MovementRange) {
+								ToGo = MinPath.Last();
+							}
+							else {
+								//ToGo = MinPath[Unit->MovementRange + 1];
+								ToGo = MinPath[Unit->MovementRange];
+							}
+							GameMode->GField->MoveUnitTo(Unit, ToGo);
+							GameMode->PassIfForced();
+						}
+						else {
+							Unit->bCanMove = false;
+							OnTurn();
+						}
 					break;
 				}
-
-
-				TArray<ATile*> AccessibleTiles = GameMode->GField->ReachableTiles(Unit->GridPosition, Unit->MovementRange, 0);
+				/*TArray<ATile*> AccessibleTiles = GameMode->GField->ReachableTiles(Unit->GridPosition, Unit->MovementRange, 0);
 				UE_LOG(LogTemp, Warning, TEXT("Accessible tiles %d"), AccessibleTiles.Num());
 				ATile* Tile = AccessibleTiles[FMath::RandRange(0, AccessibleTiles.Num() - 1)];
 				GameMode->GField->MoveUnitTo(Unit, Tile->GetGridPosition());
-				GameMode->PassIfForced();
+				GameMode->PassIfForced();*/
 				return;
 			}
 			else if (Unit->bCanAttack)

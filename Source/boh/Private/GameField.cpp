@@ -567,6 +567,7 @@ void AGameField::CheckWin()
 	}
 	if (DeadHuman >= 2 and DeadComputer >= 2) {
 		UMyGameInstance* GameInstance = Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
+		UE_LOG(LogTemp, Warning, TEXT("Pareggio"))
 		GameInstance->SetMessagge(TEXT("Pareggio"));
 		AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
 		GameMode->IsGameOver = true;
@@ -575,6 +576,7 @@ void AGameField::CheckWin()
 	}
 	if (DeadHuman >= 2) {
 		UMyGameInstance* GameInstance = Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
+		UE_LOG(LogTemp, Warning, TEXT("Vince Computer"))
 		GameInstance->SetMessagge(TEXT("Vince Computer"));
 		AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
 		GameMode->IsGameOver = true;
@@ -583,6 +585,7 @@ void AGameField::CheckWin()
 	}
 	if (DeadComputer >= 2) {
 		UMyGameInstance* GameInstance = Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
+		UE_LOG(LogTemp, Warning, TEXT("Vince Human"))
 		GameInstance->SetMessagge(TEXT("Vince Human "));
 		AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
 		GameMode->IsGameOver = true;
@@ -596,7 +599,7 @@ void AGameField::ResetField()
 {
 	AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
 	if (!GetWorld()) return;
-	if (GameMode->CurrentGameState == EGameState::ComputerPlacing) return;
+	if (GameMode->CurrentGameState == EGameState::ComputerPlacing or GameMode->CurrentGameState == EGameState::MovingUnit) return;
 
 	TArray<AActor*> FoundActors;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ObstacleClass, FoundActors);

@@ -63,7 +63,9 @@ void AHumanPlayer::OnPlacing()
 {
 	IsMyTurn = true;
 	AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
-	GameMode->CurrentGameState = EGameState::WaitingSelection;
+	if (!(GameMode->CurrentGameState == EGameState::PlacingSniper or GameMode->CurrentGameState == EGameState::PlacingBrawler)) {
+		GameMode->CurrentGameState = EGameState::WaitingSelection;
+	}
 }
 
 void AHumanPlayer::OnClick()

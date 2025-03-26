@@ -7,6 +7,7 @@
 #include "Components/Widget.h"
 #include "HumanPlayer.h"
 #include "RandomPlayer.h"
+#include "SmartPlayer.h"
 #include "MyGameInstance.h"
 #include "Game_PlayerController.h"
 
@@ -47,7 +48,8 @@ void AMyGameModeBase::BeginPlay()
 	// Human Player = 0
 	Players.Add(HumanPlayer);
 
-	auto* AI = GetWorld()->SpawnActor<ARandomPlayer>(FVector(), FRotator());
+	//auto* AI = GetWorld()->SpawnActor<ARandomPlayer>(FVector(), FRotator());
+	auto* AI = GetWorld()->SpawnActor<ASmartPlayer>(FVector(), FRotator());
 	// AI player = 1
 	Players.Add(AI);
 	UMyGameInstance* GameInstance = Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
@@ -150,7 +152,7 @@ void AMyGameModeBase::SafePass()
 void AMyGameModeBase::SetPlacingUnitTypeBrawler()
 {
 	UE_LOG(LogTemp, Warning, TEXT("CLICK BUTTON BRAWLER"));
-	if (CurrentGameState == EGameState::WaitingSelection or CurrentGameState == EGameState::PlacingSniper) {
+	if (CurrentGameState == EGameState::WaitingSelection or CurrentGameState == EGameState::PlacingSniper or CurrentGameState == EGameState::ComputerPlacing) {
 		UE_LOG(LogTemp, Warning, TEXT("PLACING BRAWLER"));
 		CurrentGameState = EGameState::PlacingBrawler;
 	}
@@ -159,7 +161,7 @@ void AMyGameModeBase::SetPlacingUnitTypeBrawler()
 void AMyGameModeBase::SetPlacingUnitTypeSniper()
 {
 	UE_LOG(LogTemp, Warning, TEXT("CLICK BUTTON SNIPER"));
-	if (CurrentGameState == EGameState::WaitingSelection or CurrentGameState == EGameState::PlacingBrawler) {
+	if (CurrentGameState == EGameState::WaitingSelection or CurrentGameState == EGameState::PlacingBrawler or CurrentGameState == EGameState::ComputerPlacing) {
 		UE_LOG(LogTemp, Warning, TEXT("PLACING SNIPER"));
 		CurrentGameState = EGameState::PlacingSniper;
 	}
