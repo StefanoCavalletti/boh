@@ -66,7 +66,7 @@ void ASmartPlayer::OnTurn()
 							if (GU->UnitType == EUnits::BRAWLER) EnemyBrawler = GU;
 						}
 						//If there are no enemys in range in attack range, move towards nearest enemy
-						if (GameMode->GField->AttackableTiles(Unit->GridPosition, Unit->AttackRange, 0).IsEmpty())
+						if (GameMode->GField->AttackableTiles(Unit->GridPosition, Unit->AttackRange).IsEmpty())
 						{
 							TArray<TArray<FVector2D>> Paths;
 							for (AGameUnit* Enemy : EnemyUnits) {
@@ -97,7 +97,7 @@ void ASmartPlayer::OnTurn()
 						}		//If the enemy brawler is in counter attack range, move out before shooting, avoiding counter attack
 						else if (EnemyBrawler and (FVector2D::Distance(Unit->GridPosition, EnemyBrawler->GridPosition) == 1.0f))
 						{
-								TArray<ATile*> AccessibleTiles = GameMode->GField->ReachableTiles(Unit->GridPosition, Unit->MovementRange, 0);
+								TArray<ATile*> AccessibleTiles = GameMode->GField->ReachableTiles(Unit->GridPosition, Unit->MovementRange);
 								ATile* Tile;
 								do {
 									Tile = AccessibleTiles[FMath::RandRange(0, AccessibleTiles.Num() - 1)];
@@ -148,7 +148,7 @@ void ASmartPlayer::OnTurn()
 					// BRAWLER MOVEMENT LOGIC
 					case EUnits::BRAWLER:
 						//Walk to the closest enemy
-						if (GameMode->GField->AttackableTiles(Unit->GridPosition, Unit->AttackRange, 0).IsEmpty()) {
+						if (GameMode->GField->AttackableTiles(Unit->GridPosition, Unit->AttackRange).IsEmpty()) {
 							TArray<TArray<FVector2D>> Paths;
 							
 							for (AGameUnit* Enemy : EnemyUnits) {
@@ -187,13 +187,13 @@ void ASmartPlayer::OnTurn()
 			}
 			else if (Unit->bCanAttack)
 			{ // Attack random unit in attack range
-				TArray<ATile*> AttackableTiles = GameMode->GField->AttackableTiles(Unit->GridPosition, Unit->AttackRange, 0);
+				TArray<ATile*> AttackableTiles = GameMode->GField->AttackableTiles(Unit->GridPosition, Unit->AttackRange);
 				UE_LOG(LogTemp, Warning, TEXT("Attackable tiles %d"), AttackableTiles.Num());
 				if (!AttackableTiles.IsEmpty()) {
 					ATile* TileToAttack = AttackableTiles[FMath::RandRange(0, AttackableTiles.Num() - 1)];
 					for (AGameUnit* UnitToAttack : GameMode->GField->UnitsArray) {
 						if (UnitToAttack->GridPosition == TileToAttack->GetGridPosition() and UnitToAttack->Owner != GameMode->CurrentPlayer) {
-							GameMode->GField->ShowAttackableTiles(Unit->GridPosition, Unit->AttackRange, 0);
+							GameMode->GField->ShowAttackableTiles(Unit->GridPosition, Unit->AttackRange);
 							GameMode->CurrentGameState = EGameState::MovingUnit;
 							FTimerHandle TimerHandle;
 							GetWorld()->GetTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this, GameMode, Unit, UnitToAttack]()

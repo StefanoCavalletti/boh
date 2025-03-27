@@ -103,7 +103,7 @@ void AMyGameModeBase::PassIfForced()
 	bool bCanStillDoSomething = false;
 	for (AGameUnit* Unit : GField->UnitsArray) {
 		if (Unit->Owner == CurrentPlayer) {
-			if (Unit->HealtPoints >0 and (Unit->bCanMove or (Unit->bCanAttack and !GField->AttackableTiles(Unit->GridPosition, Unit->AttackRange ,0).IsEmpty()))) {
+			if (Unit->HealtPoints >0 and (Unit->bCanMove or (Unit->bCanAttack and !GField->AttackableTiles(Unit->GridPosition, Unit->AttackRange).IsEmpty()))) {
 				bCanStillDoSomething = true;
 			}
 		}

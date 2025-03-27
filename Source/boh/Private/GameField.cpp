@@ -155,12 +155,12 @@ void AGameField::ExploreTile(ATile& Target, int32& c, TArray<FVector2D>& ca) {
 	}
 }
 
-TArray<ATile*> AGameField::ReachableTiles(FVector2D Pos, int32 Range, int32 Start)
+/*TArray<ATile*> AGameField::ReachableTiles(FVector2D Pos, int32 Range, int32 Start)
 {
 	TArray<ATile*> Tiles;
 	if (Start <= Range) {
 		ATile** Tile = TileMap.Find(Pos);
-		if (((*Tile)->TileStatus == ETileStatus::EMPTY) or /*((*Tile)->TileStatus == ETileStatus::GREEN) or */(Start == 0)) { // Voglio illuminare quella sotto anche se (ovviamente) è occupata
+		if (((*Tile)->TileStatus == ETileStatus::EMPTY) or (Start == 0)) { // Voglio illuminare quella sotto anche se (ovviamente) è occupata
 			int32 x = Pos.X, y = Pos.Y;
 			Tiles.AddUnique(*Tile);
 			for (int i = -1; i <= 1; i++) { // Chiamo ricorsivamente sulle celle valide vicine
@@ -180,18 +180,78 @@ TArray<ATile*> AGameField::ReachableTiles(FVector2D Pos, int32 Range, int32 Star
 		}
 	}
 	return Tiles;
+}*/
+
+TArray<ATile*> AGameField::ReachableTiles(FVector2D Pos, int32 Range)
+{
+	TArray<ATile*> Tiles;
+	TSet<FVector2D> Visited; // Per evitare di visitare più volte la stessa cella
+	TQueue<TPair<FVector2D, int32>> Queue; // FIFO queue per BFS
+
+	Queue.Enqueue(TPair<FVector2D, int32>(Pos, 0));
+
+	while (!Queue.IsEmpty())
+	{
+		TPair<FVector2D, int32> Current;
+		Queue.Dequeue(Current);
+
+		FVector2D CurrentPos = Current.Key;
+		int32 CurrentStep = Current.Value;
+
+		// Se fuori dal range massimo, ignora
+		if (CurrentStep > Range)
+			continue;
+
+		// Cerca la tile nella mappa
+		ATile** Tile = TileMap.Find(CurrentPos);
+		if (!Tile) continue;
+
+		// Evita di visitare lo stesso nodo più volte
+		if (Visited.Contains(CurrentPos))
+			continue;
+
+		Visited.Add(CurrentPos);
+		Tiles.AddUnique(*Tile); // Aggiunge la tile alla lista raggiungibile
+
+		// Espandi in 4 direzioni (NO diagonali)
+		TArray<FVector2D> Directions = {
+			FVector2D(1, 0),
+			FVector2D(-1, 0),
+			FVector2D(0, 1),
+			FVector2D(0, -1),
+		};
+
+		for (const FVector2D& Dir : Directions)
+		{
+			FVector2D NextPos = CurrentPos + Dir;
+
+			// Controlla se la tile esiste e non è stata visitata
+			if (!Visited.Contains(NextPos) && TileMap.Contains(NextPos))
+			{
+				// Controlla che sia EMPTY o la posizione iniziale
+				ATile** NextTile = TileMap.Find(NextPos);
+				if (NextTile && ((*NextTile)->TileStatus == ETileStatus::EMPTY || CurrentStep == 0))
+				{
+					Queue.Enqueue(TPair<FVector2D, int32>(NextPos, CurrentStep + 1));
+				}
+			}
+		}
+	}
+
+	return Tiles;
 }
 
-void AGameField::ShowReachableTiles(FVector2D Pos, int32 Range, int32 Start)
+
+void AGameField::ShowReachableTiles(FVector2D Pos, int32 Range)
 {
-	TArray<ATile*> Tiles = ReachableTiles(Pos, Range, Start);
+	TArray<ATile*> Tiles = ReachableTiles(Pos, Range);
 	for (ATile* Tile : Tiles) {
 		Tile->ChangeColor(FLinearColor::Green);
 		Tile->TileColor = ETileColor::GREEN;
 	}
 }
 
-TArray<ATile*> AGameField::AttackableTiles(FVector2D Pos, int32 Range, int32 Start)
+/*TArray<ATile*> AGameField::AttackableTiles(FVector2D Pos, int32 Range, int32 Start)
 {
 	TArray<ATile*> Tiles;
 	if (Start <= Range) {
@@ -222,10 +282,79 @@ TArray<ATile*> AGameField::AttackableTiles(FVector2D Pos, int32 Range, int32 Sta
 		}
 	}
 	return Tiles;
+}*/
+TArray<ATile*> AGameField::AttackableTiles(FVector2D Pos, int32 Range)
+{
+	TArray<ATile*> Tiles;
+	TSet<FVector2D> Visited; // Per evitare cicli
+	TQueue<TPair<FVector2D, int32>> Queue; // Per il BFS
+
+	Queue.Enqueue(TPair<FVector2D, int32>(Pos, 0));
+
+	while (!Queue.IsEmpty())
+	{
+		TPair<FVector2D, int32> Current;
+		Queue.Dequeue(Current);
+
+		FVector2D CurrentPos = Current.Key;
+		int32 CurrentStep = Current.Value;
+
+		// Se fuori dal range massimo, salta
+		if (CurrentStep > Range)
+			continue;
+
+		// Cerca la tile nella mappa
+		ATile** Tile = TileMap.Find(CurrentPos);
+		if (!Tile) continue;
+
+		// Evita di visitare lo stesso nodo più volte
+		if (Visited.Contains(CurrentPos))
+			continue;
+
+		Visited.Add(CurrentPos);
+
+		// Se la tile è occupata da un'unità nemica, aggiungila alla lista
+		if ((*Tile)->TileStatus == ETileStatus::OCCUPIED)
+		{
+			FVector2D TileGridPos = (*Tile)->GetGridPosition();
+			AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
+
+			for (AGameUnit* Unit : UnitsArray)
+			{
+				if (Unit->GridPosition == TileGridPos && Unit->Owner != GameMode->CurrentPlayer)
+				{
+					Tiles.AddUnique(*Tile);
+					break; // Evita di controllare altre unità
+				}
+			}
+		}
+
+		// Espandi nelle 4 direzioni (NO diagonali)
+		TArray<FVector2D> Directions = {
+			FVector2D(1, 0),
+			FVector2D(-1, 0),
+			FVector2D(0, 1),
+			FVector2D(0, -1),
+		};
+
+		for (const FVector2D& Dir : Directions)
+		{
+			FVector2D NextPos = CurrentPos + Dir;
+
+			if (!Visited.Contains(NextPos) && TileMap.Contains(NextPos)) // Evita loop
+			{
+				Queue.Enqueue(TPair<FVector2D, int32>(NextPos, CurrentStep + 1));
+			}
+		}
+	}
+
+	return Tiles;
 }
 
-void AGameField::ShowAttackableTiles(FVector2D Pos, int32 Range, int32 Start) {
-	TArray<ATile*> Tiles = AttackableTiles(Pos, Range, Start);
+
+
+void AGameField::ShowAttackableTiles(FVector2D Pos, int32 Range) {
+	TArray<ATile*> Tiles = AttackableTiles(Pos, Range);
 	for (ATile* Tile : Tiles) {
 		Tile->ChangeColor(FLinearColor::Red);
 		Tile->TileColor = ETileColor::RED;
@@ -265,7 +394,7 @@ void AGameField::MoveUnitTo(AGameUnit* Unit, FVector2D Dest)
 	// Aspetta che MoveAlongPath finisca prima di aggiornare lo stato dell'unità
 	if (GameMode->CurrentPlayer == 1) {
 		//Set the reachable tiles to green
-		ShowReachableTiles(Unit->GridPosition, Unit->MovementRange, 0);
+		ShowReachableTiles(Unit->GridPosition, Unit->MovementRange);
 		FTimerHandle TimerHandle;
 		//Wait before putting them back to white
 		GetWorld()->GetTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this, Unit, BestPath, Dest, GameMode]()

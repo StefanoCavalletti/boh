@@ -46,7 +46,7 @@ void ARandomPlayer::OnTurn()
 	for (AGameUnit* Unit : GameMode->GField->UnitsArray) {
 		if (Unit->Owner == GameMode->CurrentPlayer and Unit->HealtPoints > 0) {
 			if (Unit->bCanMove) {
-				TArray<ATile*> AccessibleTiles = GameMode->GField->ReachableTiles(Unit->GridPosition, Unit->MovementRange, 0);
+				TArray<ATile*> AccessibleTiles = GameMode->GField->ReachableTiles(Unit->GridPosition, Unit->MovementRange);
 				UE_LOG(LogTemp, Warning, TEXT("Accessible tiles %d"), AccessibleTiles.Num());
 				ATile* Tile = AccessibleTiles[FMath::RandRange(0, AccessibleTiles.Num() - 1)];
 				GameMode->GField->MoveUnitTo(Unit, Tile->GetGridPosition());
@@ -55,13 +55,13 @@ void ARandomPlayer::OnTurn()
 			}
 			else if (Unit->bCanAttack)
 			{
-				TArray<ATile*> AttackableTiles = GameMode->GField->AttackableTiles(Unit->GridPosition, Unit->AttackRange, 0);
+				TArray<ATile*> AttackableTiles = GameMode->GField->AttackableTiles(Unit->GridPosition, Unit->AttackRange);
 				UE_LOG(LogTemp, Warning, TEXT("Attackable tiles %d"), AttackableTiles.Num());
 				if (!AttackableTiles.IsEmpty()) {
 					ATile* TileToAttack = AttackableTiles[FMath::RandRange(0, AttackableTiles.Num() - 1)];
 					for (AGameUnit* UnitToAttack : GameMode->GField->UnitsArray) {
 						if (UnitToAttack->GridPosition == TileToAttack->GetGridPosition() and UnitToAttack->Owner != GameMode->CurrentPlayer) {
-							GameMode->GField->ShowAttackableTiles(Unit->GridPosition, Unit->AttackRange, 0);
+							GameMode->GField->ShowAttackableTiles(Unit->GridPosition, Unit->AttackRange);
 							FTimerHandle TimerHandle;
 							GameMode->CurrentGameState = EGameState::MovingUnit;
 							GetWorld()->GetTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this, GameMode,Unit,UnitToAttack]()

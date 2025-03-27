@@ -60,10 +60,10 @@ public:
 	int32 FreeTiles();
 	int32 AccessibleTiles();
 	void ExploreTile(ATile& Target, int32& c, TArray<FVector2D>& ca);
-	TArray<ATile*> ReachableTiles(FVector2D Pos, int32 Range, int32 Start);
-	void ShowReachableTiles(FVector2D Pos, int32 Range, int32 Start);
-	TArray<ATile*> AttackableTiles(FVector2D Pos, int32 Range, int32 Start);
-	void ShowAttackableTiles(FVector2D Pos, int32 Range, int32 Start);
+	TArray<ATile*> ReachableTiles(FVector2D Pos, int32 Range);
+	void ShowReachableTiles(FVector2D Pos, int32 Range);
+	TArray<ATile*> AttackableTiles(FVector2D Pos, int32 Range);
+	void ShowAttackableTiles(FVector2D Pos, int32 Range);
 	void SetAllTilesWhite();
 	void MoveUnitTo(AGameUnit* Unit, FVector2D Dest);
 	void Attack(AGameUnit* Attacker, AGameUnit* Attacked);

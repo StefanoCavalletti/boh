@@ -161,13 +161,13 @@ void AHumanPlayer::OnClick()
 							UE_LOG(LogTemp, Warning, TEXT("PUO MUOVERE"));
 							GameMode->CurrentGameState = EGameState::UnitSelected;
 							SelectedUnit = GameUnit;
-							GameMode->GField->ShowReachableTiles(Position, GameUnit->MovementRange, 0);
+							GameMode->GField->ShowReachableTiles(Position, GameUnit->MovementRange);
 						}
-						if (GameUnit->bCanAttack and !GameMode->GField->AttackableTiles(GameUnit->GridPosition, GameUnit->AttackRange, 0).IsEmpty()) {
+						if (GameUnit->bCanAttack and !GameMode->GField->AttackableTiles(GameUnit->GridPosition, GameUnit->AttackRange).IsEmpty()) {
 							UE_LOG(LogTemp, Warning, TEXT("PUO ATTACCARE"));
 							GameMode->CurrentGameState = EGameState::UnitSelected;
 							SelectedUnit = GameUnit;
-							GameMode->GField->ShowAttackableTiles(Position, GameUnit->AttackRange, 0);
+							GameMode->GField->ShowAttackableTiles(Position, GameUnit->AttackRange);
 						}
 					}
 				}
