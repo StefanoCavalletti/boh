@@ -14,6 +14,7 @@ AGameUnit::AGameUnit()
 
 void AGameUnit::SetUpUnit(EUnits UT, int32 Player, FVector2D Pos)
 {
+	//Set unit properties 
 	UnitType = UT;
 	Owner = Player;
 	GridPosition = Pos;

@@ -8,7 +8,7 @@
 #include "Math/UnrealMathUtility.h"
 #include "MyGameInstance.h"
 #include "Kismet/GameplayStatics.h"
-#include "Algo/Sort.h" // Includi questa libreria per l'ordinamento
+#include "Algo/Sort.h" 
 
 
 // Sets default values
@@ -55,7 +55,7 @@ void AGameField::FieldBuilder() {
 		ATile* tile = *TileMap.Find(FVector2D(IndexX, IndexY));
 		if (tile->TileStatus == ETileStatus::OCCUPIED) {
 			Index--;
-			continue; // Salta il resto del loop e riprova con nuove coordinate
+			continue; // Skip loop and try new coords
 		}
 		tile->TileStatus = ETileStatus::OCCUPIED;
 		if(IsGameFieldValid()){
@@ -76,16 +76,10 @@ void AGameField::FieldBuilder() {
 
 FString AGameField::ConvertCoord(FVector2D Coord)
 {
-	// Controllo che X sia nel range corretto
-	if (Coord.X < 0 || Coord.X >= 25)
-	{
-		return TEXT("Invalid");
-	}
-
-	// Convertire il numero in lettera
+	// From number to letter
 	TCHAR Letter = 'A' + static_cast<int32>(Coord.X);
 
-	// Creare la stringa nel formato "LETTERA NUMERO"
+	// Create string 
 	FString Result = FString::Printf(TEXT("%c%d"), Letter, static_cast<int32>(Coord.Y+1));
 
 	return Result;
@@ -102,6 +96,7 @@ bool AGameField::IsGameFieldValid() {
 }
 
 int32 AGameField::FreeTiles() {
+	//Get the number of empty tiles
 	int32 Count = 0;
 	for (int32 IX = 0; IX < Size; IX++) {
 		for (int32 IY = 0; IY < Size; IY++) {
@@ -126,7 +121,6 @@ int32 AGameField::AccessibleTiles() {
 	/*------------------*/
 	int32 Count = 0;
 	TArray<FVector2D> Counted;
-	//Counted.Add(obj->GetGridPosition());
 	ExploreTile(*obj, Count, Counted);
 	return Count;
 }
@@ -137,15 +131,15 @@ void AGameField::ExploreTile(ATile& Target, int32& c, TArray<FVector2D>& ca) {
 	int32 y = int(pos.Y);
 
 	ca.Add(FVector2D(x, y));
-	c++;  //Incremento siccome non la ho già contata
+	c++;  //Increment since it's a empty tile
 
-	for (int i = -1; i <= 1; i++) { // Chiamo ricorsivamente sulle celle valide vicine
+	for (int i = -1; i <= 1; i++) { // Call on the near cells
 		for (int j = -1; j <= 1; j++) {
-			if ((i != 0 && j == 0) || (j != 0 && i == 0)) { // SOLO MOVIMENTI DIRETTI NO OBLIQUI
+			if ((i != 0 && j == 0) || (j != 0 && i == 0)) { // Only up, down, left, right
 				if (x + i >= 0 && x + i < Size && y + j >= 0 && y + j < Size) {
 					ATile** TilePtr = TileMap.Find(FVector2D(x + i, y + j));
 					if (TilePtr && *TilePtr && (*TilePtr)->TileStatus == ETileStatus::EMPTY) {
-						if (!ca.Contains(FVector2D(x + i, y + j))) {
+						if (!ca.Contains(FVector2D(x + i, y + j))) { // if i did not visit yet
 							ExploreTile(**TilePtr, c, ca);
 						}
 					}
@@ -155,38 +149,11 @@ void AGameField::ExploreTile(ATile& Target, int32& c, TArray<FVector2D>& ca) {
 	}
 }
 
-/*TArray<ATile*> AGameField::ReachableTiles(FVector2D Pos, int32 Range, int32 Start)
-{
-	TArray<ATile*> Tiles;
-	if (Start <= Range) {
-		ATile** Tile = TileMap.Find(Pos);
-		if (((*Tile)->TileStatus == ETileStatus::EMPTY) or (Start == 0)) { // Voglio illuminare quella sotto anche se (ovviamente) è occupata
-			int32 x = Pos.X, y = Pos.Y;
-			Tiles.AddUnique(*Tile);
-			for (int i = -1; i <= 1; i++) { // Chiamo ricorsivamente sulle celle valide vicine
-				for (int j = -1; j <= 1; j++) {
-					if ((i != 0 && j == 0) || (j != 0 && i == 0)) { // SOLO MOVIMENTI DIRETTI NO OBLIQUI
-						if (x + i >= 0 && x + i < Size && y + j >= 0 && y + j < Size) {
-							//Tiles.Append(ReachableTiles(FVector2D(x + i, y + j), Range, Start + 1));
-							TArray<ATile*> AT = ReachableTiles(FVector2D(x + i, y + j), Range, Start + 1);
-							for (ATile* TT : AT) {
-								Tiles.AddUnique(TT);
-							}
-							//ReachableTiles(FVector2D(x + i, y + j), Range, Start + 1);
-						}
-					}
-				}
-			}
-		}
-	}
-	return Tiles;
-}*/
-
 TArray<ATile*> AGameField::ReachableTiles(FVector2D Pos, int32 Range)
 {
 	TArray<ATile*> Tiles;
-	TSet<FVector2D> Visited; // Per evitare di visitare più volte la stessa cella
-	TQueue<TPair<FVector2D, int32>> Queue; // FIFO queue per BFS
+	TSet<FVector2D> Visited;
+	TQueue<TPair<FVector2D, int32>> Queue; 
 
 	Queue.Enqueue(TPair<FVector2D, int32>(Pos, 0));
 
@@ -198,22 +165,22 @@ TArray<ATile*> AGameField::ReachableTiles(FVector2D Pos, int32 Range)
 		FVector2D CurrentPos = Current.Key;
 		int32 CurrentStep = Current.Value;
 
-		// Se fuori dal range massimo, ignora
+		// Skip if out of range
 		if (CurrentStep > Range)
 			continue;
 
-		// Cerca la tile nella mappa
+		// Search tile on the map
 		ATile** Tile = TileMap.Find(CurrentPos);
 		if (!Tile) continue;
 
-		// Evita di visitare lo stesso nodo più volte
+		// Avoid multiple visit on the same node
 		if (Visited.Contains(CurrentPos))
 			continue;
 
 		Visited.Add(CurrentPos);
-		Tiles.AddUnique(*Tile); // Aggiunge la tile alla lista raggiungibile
+		Tiles.AddUnique(*Tile); // add the tile to the list
 
-		// Espandi in 4 direzioni (NO diagonali)
+		// Up, down, left, right
 		TArray<FVector2D> Directions = {
 			FVector2D(1, 0),
 			FVector2D(-1, 0),
@@ -225,10 +192,10 @@ TArray<ATile*> AGameField::ReachableTiles(FVector2D Pos, int32 Range)
 		{
 			FVector2D NextPos = CurrentPos + Dir;
 
-			// Controlla se la tile esiste e non è stata visitata
+			// If not visited yet
 			if (!Visited.Contains(NextPos) && TileMap.Contains(NextPos))
 			{
-				// Controlla che sia EMPTY o la posizione iniziale
+				// If the tile is empty or is the initial one
 				ATile** NextTile = TileMap.Find(NextPos);
 				if (NextTile && ((*NextTile)->TileStatus == ETileStatus::EMPTY || CurrentStep == 0))
 				{
@@ -244,6 +211,7 @@ TArray<ATile*> AGameField::ReachableTiles(FVector2D Pos, int32 Range)
 
 void AGameField::ShowReachableTiles(FVector2D Pos, int32 Range)
 {
+	// Change reachable tiles color to green
 	TArray<ATile*> Tiles = ReachableTiles(Pos, Range);
 	for (ATile* Tile : Tiles) {
 		Tile->ChangeColor(FLinearColor::Green);
@@ -251,43 +219,11 @@ void AGameField::ShowReachableTiles(FVector2D Pos, int32 Range)
 	}
 }
 
-/*TArray<ATile*> AGameField::AttackableTiles(FVector2D Pos, int32 Range, int32 Start)
-{
-	TArray<ATile*> Tiles;
-	if (Start <= Range) {
-		ATile** Tile = TileMap.Find(Pos);
-		int32 x = Pos.X, y = Pos.Y;
-		if ((*Tile)->TileStatus == ETileStatus::OCCUPIED) {
-			FVector2D Pos = (*Tile)->GetGridPosition();
-			for (int32 Index = 0; Index < UnitsArray.Num(); Index++) {
-				AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
-				if (UnitsArray[Index]->GridPosition == Pos and UnitsArray[Index]->Owner != GameMode->CurrentPlayer) {
-					Tiles.AddUnique((*Tile));
-				}
-			}
-		}
-		for (int i = -1; i <= 1; i++) { // Chiamo ricorsivamente sulle celle valide vicine
-			for (int j = -1; j <= 1; j++) {
-				if ((i != 0 && j == 0) || (j != 0 && i == 0)) { // SOLO MOVIMENTI DIRETTI NO OBLIQUI
-					if (x + i >= 0 && x + i < Size && y + j >= 0 && y + j < Size) {
-						//Tiles.Append(AttackableTiles(FVector2D(x + i, y + j), Range, Start + 1));
-						TArray<ATile*> AT = AttackableTiles(FVector2D(x + i, y + j), Range, Start + 1);
-						for (ATile* TT : AT) {
-							Tiles.AddUnique(TT);
-						}
-						//AttackableTiles(FVector2D(x + i, y + j), Range, Start + 1);
-					}
-				}
-			}
-		}
-	}
-	return Tiles;
-}*/
 TArray<ATile*> AGameField::AttackableTiles(FVector2D Pos, int32 Range)
 {
 	TArray<ATile*> Tiles;
-	TSet<FVector2D> Visited; // Per evitare cicli
-	TQueue<TPair<FVector2D, int32>> Queue; // Per il BFS
+	TSet<FVector2D> Visited; 
+	TQueue<TPair<FVector2D, int32>> Queue; 
 
 	Queue.Enqueue(TPair<FVector2D, int32>(Pos, 0));
 
@@ -299,21 +235,21 @@ TArray<ATile*> AGameField::AttackableTiles(FVector2D Pos, int32 Range)
 		FVector2D CurrentPos = Current.Key;
 		int32 CurrentStep = Current.Value;
 
-		// Se fuori dal range massimo, salta
+		// Skip if out of range
 		if (CurrentStep > Range)
 			continue;
 
-		// Cerca la tile nella mappa
+		// Search tile on the map
 		ATile** Tile = TileMap.Find(CurrentPos);
 		if (!Tile) continue;
 
-		// Evita di visitare lo stesso nodo più volte
+		// Avoid multiple visit on the same node
 		if (Visited.Contains(CurrentPos))
 			continue;
 
 		Visited.Add(CurrentPos);
 
-		// Se la tile è occupata da un'unità nemica, aggiungila alla lista
+		// If there's an enemy on the tile add the tile to the list
 		if ((*Tile)->TileStatus == ETileStatus::OCCUPIED)
 		{
 			FVector2D TileGridPos = (*Tile)->GetGridPosition();
@@ -324,12 +260,12 @@ TArray<ATile*> AGameField::AttackableTiles(FVector2D Pos, int32 Range)
 				if (Unit->GridPosition == TileGridPos && Unit->Owner != GameMode->CurrentPlayer)
 				{
 					Tiles.AddUnique(*Tile);
-					break; // Evita di controllare altre unità
+					break; // No need to check the other units (Max 1 unit for tile)
 				}
 			}
 		}
 
-		// Espandi nelle 4 direzioni (NO diagonali)
+		// Up, down, left, right
 		TArray<FVector2D> Directions = {
 			FVector2D(1, 0),
 			FVector2D(-1, 0),
@@ -341,7 +277,7 @@ TArray<ATile*> AGameField::AttackableTiles(FVector2D Pos, int32 Range)
 		{
 			FVector2D NextPos = CurrentPos + Dir;
 
-			if (!Visited.Contains(NextPos) && TileMap.Contains(NextPos)) // Evita loop
+			if (!Visited.Contains(NextPos) && TileMap.Contains(NextPos)) // Avoid loops
 			{
 				Queue.Enqueue(TPair<FVector2D, int32>(NextPos, CurrentStep + 1));
 			}
@@ -355,6 +291,7 @@ TArray<ATile*> AGameField::AttackableTiles(FVector2D Pos, int32 Range)
 
 void AGameField::ShowAttackableTiles(FVector2D Pos, int32 Range) {
 	TArray<ATile*> Tiles = AttackableTiles(Pos, Range);
+	//Change attackable tiles color to red
 	for (ATile* Tile : Tiles) {
 		Tile->ChangeColor(FLinearColor::Red);
 		Tile->TileColor = ETileColor::RED;
@@ -363,6 +300,7 @@ void AGameField::ShowAttackableTiles(FVector2D Pos, int32 Range) {
 
 void AGameField::SetAllTilesWhite()
 {
+	//Set all the tiles color to white
 	for (int32 IX = 0; IX < Size; IX++) {
 		for (int32 IY = 0; IY < Size; IY++) {
 			ATile* tile = *TileMap.Find(FVector2D(IX, IY));
@@ -391,7 +329,6 @@ void AGameField::MoveUnitTo(AGameUnit* Unit, FVector2D Dest)
 	{
 		UE_LOG(LogTemp, Log, TEXT("TILE COORD: X = %f, Y = %f"), Vector.X, Vector.Y);
 	}
-	// Aspetta che MoveAlongPath finisca prima di aggiornare lo stato dell'unità
 	if (GameMode->CurrentPlayer == 1) {
 		//Set the reachable tiles to green
 		ShowReachableTiles(Unit->GridPosition, Unit->MovementRange);
@@ -429,21 +366,21 @@ void AGameField::MoveUnitTo(AGameUnit* Unit, FVector2D Dest)
 }
 
 void AGameField::MoveAlongPath(AGameUnit* Unit, TArray<FVector2D> Path, int32 Step, TFunction<void()> OnComplete)
-{
+{   //If i am at the end of the path terminate
 	if (Step >= Path.Num())
 	{
 		if (OnComplete)
 		{
 			AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
 			GameMode->CurrentGameState = EGameState::WaitingAction;
-			OnComplete(); // Chiama la funzione di callback alla fine del percorso
+			OnComplete(); // Callback function at the end of the path
 		}
 		return;
 	}
 
 	FVector2D NextTile = Path[Step];
 
-	// Imposta il timer per il prossimo movimento
+	// Set the timer for next step
 	FTimerHandle TimerHandle;
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this, Unit, Path, Step, OnComplete]()
 		{
@@ -452,7 +389,7 @@ void AGameField::MoveAlongPath(AGameUnit* Unit, TArray<FVector2D> Path, int32 St
 			ATile** Tile = TileMap.Find(Path[Step]);
 			(*Tile)->ChangeColor(FLinearColor::White);
 			(*Tile)->TileColor = ETileColor::WHITE;
-			// Chiamata ricorsiva per il passo successivo
+			// next step 
 			MoveAlongPath(Unit, Path, Step + 1, OnComplete);
 		}), 0.3f, false);
 }
@@ -466,6 +403,7 @@ void AGameField::Attack(AGameUnit* Attacker, AGameUnit* Attacked)
 	int32 Damage = FMath::RandRange(Attacker->MinDamage, Attacker->MaxDamage);
 	int32 CounterDamage = 0;
 	Attacked->HealtPoints -= Damage;
+	// Counter attack logic
 	if (Attacker->UnitType == EUnits::SNIPER) {
 		switch (Attacked->UnitType) {
 			case EUnits::SNIPER:
@@ -481,8 +419,10 @@ void AGameField::Attack(AGameUnit* Attacker, AGameUnit* Attacked)
 			break;
 		}
 	}
+	// Add attack log to log history
 	GameInstance->AddLogMessage(Player + UT + ConvertCoord(Attacked->GridPosition) + FString::Printf(TEXT(" %d C %d"), Damage, CounterDamage));
 	UE_LOG(LogTemp, Warning, TEXT("Attacked HP %d"), Attacked->HealtPoints);
+	// Check if a unit died
 	if (Attacked->HealtPoints <= 0) {
 		Attacked->HealtPoints = 0;
 		Attacked->Destroy();
@@ -498,7 +438,9 @@ void AGameField::Attack(AGameUnit* Attacker, AGameUnit* Attacked)
 		Attacker->GridPosition = FVector2D(-1000, -1000);
 	}
 	Attacker->bCanAttack = false;
+	// Update the unit stats on screen
 	GameInstance->UpdateStats();
+	// Check if the game is over
 	CheckWin();
 }
 
@@ -508,11 +450,10 @@ TArray<FVector2D> AGameField::FindPath(FVector2D Start, FVector2D Goal)
 {
 	TArray<FVector2D> Path;
 
-	// Coda con priorità emulata tramite TArray
 	TArray<FNode> OpenSet;
-	OpenSet.Add(FNode(Start, 0.0f));  // Aggiungi il nodo iniziale con punteggio 0
+	OpenSet.Add(FNode(Start, 0.0f));  // Starting node score 0
 
-	// Mappe per il tracciamento del percorso
+	// Maps to keep track of path
 	TMap<FVector2D, FVector2D> CameFrom;
 	TMap<FVector2D, float> GScore;
 	TMap<FVector2D, float> FScore;
@@ -522,27 +463,27 @@ TArray<FVector2D> AGameField::FindPath(FVector2D Start, FVector2D Goal)
 
 	while (OpenSet.Num() > 0)
 	{
-		// Ordina la coda in base al FScore
+		// Sort by FScore
 		Algo::Sort(OpenSet, [](const FNode& A, const FNode& B) {
 			return A.FScore < B.FScore; // Min-Heap
 			});
 
 		FNode CurrentNode = OpenSet[0];
-		OpenSet.RemoveAt(0);  // Rimuove il primo nodo (quello con il punteggio più basso)
+		OpenSet.RemoveAt(0);  // Remove first node (lowest score)
 
-		if (CurrentNode.Position == Goal) // Se raggiungiamo il Goal, ricostruiamo il percorso
+		if (CurrentNode.Position == Goal) // If goal reached
 		{
 			FVector2D Current = Goal;
 			while (CameFrom.Contains(Current))
 			{
-				Path.Insert(Current, 0);  // Aggiungi alla lista del percorso
+				Path.Insert(Current, 0);  // Add to list 
 				Current = CameFrom[Current];
 			}
-			Path.Insert(Start, 0);  // Aggiungi il punto di partenza
+			Path.Insert(Start, 0);  // Add starting coords
 			return Path;
 		}
 
-		// Direzioni possibili (Su, Giù, Sinistra, Destra)
+		// Up, down, right, left
 		TArray<FVector2D> Neighbors = {
 			FVector2D(CurrentNode.Position.X + 1, CurrentNode.Position.Y),
 			FVector2D(CurrentNode.Position.X - 1, CurrentNode.Position.Y),
@@ -552,10 +493,10 @@ TArray<FVector2D> AGameField::FindPath(FVector2D Start, FVector2D Goal)
 
 		for (const FVector2D& Neighbor : Neighbors)
 		{
-			if (!TileMap.Contains(Neighbor)) continue; // Ignora se fuori dalla mappa
-			if (TileMap[Neighbor]->TileStatus == ETileStatus::OCCUPIED) continue; // Ignora se è un ostacolo
+			if (!TileMap.Contains(Neighbor)) continue; // Ignore invalid positions
+			if (TileMap[Neighbor]->TileStatus == ETileStatus::OCCUPIED) continue; // If is occupied ignore
 
-			float TentativeGScore = GScore[CurrentNode.Position] + 1.0f; // Costo base di movimento
+			float TentativeGScore = GScore[CurrentNode.Position] + 1.0f; //Base cost
 
 			if (!GScore.Contains(Neighbor) || TentativeGScore < GScore[Neighbor])
 			{
@@ -564,15 +505,16 @@ TArray<FVector2D> AGameField::FindPath(FVector2D Start, FVector2D Goal)
 				float H = FVector2D::Distance(Neighbor, Goal);
 				float F = TentativeGScore + H;
 				FScore.Add(Neighbor, F);
-				OpenSet.Add(FNode(Neighbor, F)); // Aggiungi il nodo alla coda
+				OpenSet.Add(FNode(Neighbor, F)); // Add node to queue
 			}
 		}
 	}
-	return Path; // Se nessun percorso trovato, restituisce un array vuoto
+	return Path; 
 }
 
 void AGameField::ShowPath(TArray<FVector2D> Path)
 {
+	// Change the path color to green
 	for (FVector2D Coord : Path) {
 		ATile** Tile = TileMap.Find(Coord);
 		(*Tile)->ChangeColor(FLinearColor::Green);
@@ -591,31 +533,31 @@ void AGameField::CheckWin()
 			DeadComputer++;
 		}
 	}
+	// If all the units are dead it's a draw
 	if (DeadHuman >= 2 and DeadComputer >= 2) {
 		UMyGameInstance* GameInstance = Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
 		UE_LOG(LogTemp, Warning, TEXT("Pareggio"))
 		GameInstance->SetMessagge(TEXT("Pareggio"));
 		AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
 		GameMode->IsGameOver = true;
-		//ResetField();
 		return;
 	}
+	// If human player units are dead computer wins
 	if (DeadHuman >= 2) {
 		UMyGameInstance* GameInstance = Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
 		UE_LOG(LogTemp, Warning, TEXT("Vince Computer"))
 		GameInstance->SetMessagge(TEXT("Vince Computer"));
 		AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
 		GameMode->IsGameOver = true;
-		//ResetField();
 		return;
 	}
+	// If computer units are dead human wins
 	if (DeadComputer >= 2) {
 		UMyGameInstance* GameInstance = Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
 		UE_LOG(LogTemp, Warning, TEXT("Vince Human"))
 		GameInstance->SetMessagge(TEXT("Vince Human "));
 		AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
 		GameMode->IsGameOver = true;
-		//ResetField();
 		return;
 	}
 	return;
@@ -632,18 +574,19 @@ void AGameField::ResetField()
 
 	TArray<AActor*> FoundActors;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ObstacleClass, FoundActors);
-
+	// Remove all actors 
 	for (AActor* Actor : FoundActors) {
 		if (Actor) {
 			Actor->Destroy();
 		}
 	}
-
+	// Remove all tiles
 	for (ATile* Tile : TileArray) {
 		if (Tile) {
 			Tile->Destroy();
 		}
 	}
+	// Remove all units
 	for (AGameUnit* Unit : UnitsArray) {
 		if (Unit->GridPosition != FVector2D(-1000, -1000)) {
 			Unit->Destroy();

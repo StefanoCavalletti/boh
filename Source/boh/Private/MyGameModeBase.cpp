@@ -71,14 +71,12 @@ void AMyGameModeBase::StartGame()
 	GField->FieldBuilder();
 	PlayerToPlace = { EUnits::BRAWLER,  EUnits::SNIPER };
 	AIToPlace = { EUnits::BRAWLER,  EUnits::SNIPER };
-	CurrentPlayer = FMath::RandRange(0, 1); // Se 0 inizia Human, altrimenti AI
+	CurrentPlayer = FMath::RandRange(0, 1); // If 0 Human Start, 1 Computer starts
 	if(CurrentPlayer==0){
 		GameInstance->SetMessagge(TEXT("Human Starts Placing"));
-		//TextBlock_0->SetText(FText::FromString(TEXT("Human starts")));
 		this->PlaceUnits();
 		
 	} else {
-		//TextBlock_0->SetText(FText::FromString(TEXT("AI starts")));
 		GameInstance->SetMessagge(TEXT("Computer Starts Placing"));
 		this->PlaceUnits();
 	}
@@ -100,6 +98,7 @@ void AMyGameModeBase::SetupAndStartTurns()
 
 void AMyGameModeBase::PassIfForced()
 {
+	//if there are no possible action next player plays
 	bool bCanStillDoSomething = false;
 	for (AGameUnit* Unit : GField->UnitsArray) {
 		if (Unit->Owner == CurrentPlayer) {
@@ -115,6 +114,7 @@ void AMyGameModeBase::PassIfForced()
 
 void AMyGameModeBase::SafePass()
 {
+	//Reset flags before next player plays
 	for (AGameUnit* Unit : GField->UnitsArray) {
 		if (Unit->Owner == CurrentPlayer) {
 			if (Unit->HealtPoints > 0) {
@@ -158,6 +158,7 @@ int32 AMyGameModeBase::GetNextPlayer(int32 Player)
 
 void AMyGameModeBase::NextPlayerPlace()
 {
+	//Next player can place
 	CurrentPlayer = GetNextPlayer(CurrentPlayer);
 	UMyGameInstance* GameInstance = Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
 	if (CurrentPlayer == 0) {
@@ -171,6 +172,7 @@ void AMyGameModeBase::NextPlayerPlace()
 
 void AMyGameModeBase::NextPlayerTurn()
 {
+	//Pass turn to next player
 	if (IsGameOver == true) {
 		return;
 	}

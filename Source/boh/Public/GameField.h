@@ -14,12 +14,12 @@ struct FNode
 	FVector2D Position;
 	float FScore;
 
-	FNode() : Position(FVector2D::ZeroVector), FScore(0.0f) {} // Costruttore di Default
+	FNode() : Position(FVector2D::ZeroVector), FScore(0.0f) {} 
 	FNode(FVector2D InPosition, float InFScore) : Position(InPosition), FScore(InFScore) {}
 
 	bool operator<(const FNode& Other) const
 	{
-		return FScore > Other.FScore; // Min-Heap: priorità al nodo con FScore più basso
+		return FScore > Other.FScore; 
 	}
 };
 

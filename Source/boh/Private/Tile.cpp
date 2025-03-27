@@ -42,7 +42,7 @@ void ATile::ChangeColor(FLinearColor NewColor)
 {
 	if (!StaticMeshComponent) return;
 
-	// Creiamo un materiale dinamico SOLO SE non esiste già
+	// create dynamic material
 	if (!DynamicMaterial)
 	{
 		DynamicMaterial = StaticMeshComponent->CreateAndSetMaterialInstanceDynamic(0);
@@ -50,7 +50,7 @@ void ATile::ChangeColor(FLinearColor NewColor)
 
 	if (DynamicMaterial)
 	{
-		// Impostiamo il colore del materiale dinamico
+		// Set color of dynamic material
 		DynamicMaterial->SetVectorParameterValue(TEXT("BaseColor"), NewColor);
 	}
 }

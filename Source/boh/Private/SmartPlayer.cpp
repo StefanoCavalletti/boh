@@ -39,11 +39,11 @@ void ASmartPlayer::OnTurn()
 	UE_LOG(LogTemp, Warning, TEXT("SMART COMPUTER TURN"));
 	AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
 	GameMode->CurrentGameState = EGameState::WaitingAction;
-	GameMode->PassIfForced(); //DEVO FARE RETURN SE PASS IF FORCED RITORNA TRUE
+	GameMode->PassIfForced(); 
 	if (GameMode->CurrentPlayer == 0)
-		return; // SE PASSA TERMINO
+		return; // If is not my turn anymore i return
 	if (GameMode->IsGameOver)
-		return; // return se è finito il giuoco
+		return; // If the game is over i return
 	TArray<AGameUnit*> MyUnits;
 	TArray<AGameUnit*> EnemyUnits;
 	AGameUnit* EnemyBrawler = nullptr;
@@ -56,9 +56,9 @@ void ASmartPlayer::OnTurn()
 			if(Unit->HealtPoints > 0) EnemyUnits.Add(Unit);
 		}
 	}
-	for (AGameUnit* Unit : MyUnits) {
+	for (AGameUnit* Unit : MyUnits) { // Search for my alive units
 		if (Unit->HealtPoints > 0) {
-			if (Unit->bCanMove) {
+			if (Unit->bCanMove) { // If it can move
 				switch (Unit->UnitType) {
 					//SNIPER MOVEMENT LOGIC
 					case EUnits::SNIPER:
@@ -159,7 +159,7 @@ void ASmartPlayer::OnTurn()
 							}
 							if (Paths.Num() == 0) return;
 							UE_LOG(LogTemp, Warning, TEXT("PATHS DIM %d"), Paths.Num());
-							TArray<FVector2D> MinPath = Paths.Last(); // SE l'ultimo è 0 è un problema, devo risolvere
+							TArray<FVector2D> MinPath = Paths.Last();
 							for (TArray<FVector2D> Pa : Paths) {
 								UE_LOG(LogTemp, Warning, TEXT("PATH DIM %d"), Pa.Num());
 								if (Pa.Num() < MinPath.Num() and Pa.Num() > 1) {
@@ -200,7 +200,6 @@ void ASmartPlayer::OnTurn()
 								{
 									GameMode->GField->SetAllTilesWhite();
 									GameMode->GField->Attack(Unit, UnitToAttack);
-									//GameMode->PassIfForced();
 									this->OnTurn();
 								}), 1.5f, false);
 							return;
@@ -229,9 +228,9 @@ void ASmartPlayer::OnPlacing()
 	AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
 	GameMode->CurrentGameState = EGameState::ComputerPlacing;
 	FTimerHandle TimerHandle;
-	//ritarda tutto di 3 secondi
+	//Wait a little
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle, [&]()
-		{	// effettivo corpo della funzione
+		{	// Place a random unit in a random free tile
 			AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
 			EUnits UnitToPlace = GameMode->AIToPlace[FMath::RandRange(0, GameMode->AIToPlace.Num() - 1)];
 			ATile** RandTile = nullptr;
@@ -240,14 +239,14 @@ void ASmartPlayer::OnPlacing()
 				IndexX = FMath::RandRange(0, GameMode->FieldSize - 1);
 				IndexY = FMath::RandRange(0, GameMode->FieldSize - 1);
 				RandTile = GameMode->GField->TileMap.Find(FVector2D(IndexX, IndexY));
-			} while ((*RandTile)->TileStatus == ETileStatus::OCCUPIED);
+			} while ((*RandTile)->TileStatus == ETileStatus::OCCUPIED);		//look for a random empty tile
 
 			FVector Location = (*RandTile)->GetActorLocation() + FVector(0, 0, 2);
 			(*RandTile)->TileStatus = ETileStatus::OCCUPIED;
 
 			AGameUnit* UnitPtr = nullptr;
 
-			switch (UnitToPlace) {
+			switch (UnitToPlace) { // Place the unit
 				case EUnits::BRAWLER:
 					UnitPtr = GetWorld()->SpawnActor<AGameUnit>(GameMode->RedBrawlerActor, Location, FRotator::ZeroRotator);
 					GameMode->AIToPlace.Remove(EUnits::BRAWLER);
@@ -262,6 +261,7 @@ void ASmartPlayer::OnPlacing()
 					GameMode->GField->UnitsArray.Add(UnitPtr);
 					break;
 			}
+			//If placing is over start game otherwise continue placing
 			if (GameMode->AIToPlace.IsEmpty() and GameMode->PlayerToPlace.IsEmpty()) {
 				GameMode->SetupAndStartTurns();
 			}

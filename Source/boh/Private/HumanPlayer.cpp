@@ -19,8 +19,6 @@ AHumanPlayer::AHumanPlayer()
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	//set the camera as RootComponent
 	SetRootComponent(Camera);
-	// get the game instance reference
-	//GameInstance = Cast<UTTT_GameInstance>(UGameplayStatics::GetGameInstance(GetWorld()));
 	// default init values
 	PlayerNumber = -1;
 	SelectedUnit = nullptr;
@@ -76,21 +74,23 @@ void AHumanPlayer::OnClick()
 	GetWorld()->GetFirstPlayerController()->GetHitResultUnderCursor(ECollisionChannel::ECC_Pawn, true, Hit);
 
 	AMyGameModeBase* GameMode = Cast<AMyGameModeBase>(GetWorld()->GetAuthGameMode());
-	if (GameMode->IsGameOver) return;
+	if (GameMode->IsGameOver) return; // If the game is over do nothing
 	switch (GameMode->CurrentGameState) {
-		
+		// Click acts different based on the state of the game
+		//If i am placing the brawler
 		case EGameState::PlacingBrawler:
 			if (Hit.bBlockingHit and IsMyTurn)
 			{
 				if (ATile* CurrTile = Cast<ATile>(Hit.GetActor()))
 				{
-					if (CurrTile->TileStatus == ETileStatus::EMPTY)
+					if (CurrTile->TileStatus == ETileStatus::EMPTY) // Checks if the tile is empty
 					{
 						UE_LOG(LogTemp, Warning, TEXT("CLICK BRAWLER %s"), *UEnum::GetValueAsString(GameMode->CurrentGameState));
+						//Spawn the brawler actor
 						FVector Location = CurrTile->GetActorLocation() + FVector(0,0,2);
 						AGameUnit* Brawler = GetWorld()->SpawnActor<AGameUnit>(GameMode->BlueBrawlerActor, Location, FRotator::ZeroRotator);
 						CurrTile->TileStatus = ETileStatus::OCCUPIED;
-
+						//Set up the gameUnit
 						Brawler->SetUpUnit(EUnits::BRAWLER, GameMode->CurrentPlayer, CurrTile->GetGridPosition());
 						GameMode->GField->UnitsArray.Add(Brawler);
 						
@@ -100,7 +100,7 @@ void AHumanPlayer::OnClick()
 						GameMode->PlayerToPlace.Remove(EUnits::BRAWLER);
 
 						IsMyTurn = false;
-
+						//If placing is over start game otherwise continue placing
 						if (GameMode->AIToPlace.IsEmpty() and GameMode->PlayerToPlace.IsEmpty()) {
 							GameMode->SetupAndStartTurns();
 						}
@@ -112,19 +112,20 @@ void AHumanPlayer::OnClick()
 				}
 			}
 		break;
-
+		//If i am placing the sniper
 		case EGameState::PlacingSniper:
 			if (Hit.bBlockingHit and IsMyTurn)
 			{
 				if (ATile* CurrTile = Cast<ATile>(Hit.GetActor()))
 				{
-					if (CurrTile->TileStatus == ETileStatus::EMPTY)
+					if (CurrTile->TileStatus == ETileStatus::EMPTY) // check if the tile is empty
 					{
 						UE_LOG(LogTemp, Warning, TEXT("CLICK SNIPER"));
+						// Spawn sniper actor
 						FVector Location = CurrTile->GetActorLocation() + FVector(0,0,2);
 						AGameUnit* Sniper = GetWorld()->SpawnActor<AGameUnit>(GameMode->BlueSniperActor, Location, FRotator::ZeroRotator);
 						CurrTile->TileStatus = ETileStatus::OCCUPIED;
-						
+						//Set up GameUnit
 						Sniper->SetUpUnit(EUnits::SNIPER, GameMode->CurrentPlayer, CurrTile->GetGridPosition());
 						GameMode->GField->UnitsArray.Add(Sniper);
 						
@@ -134,7 +135,7 @@ void AHumanPlayer::OnClick()
 						GameMode->PlayerToPlace.Remove(EUnits::SNIPER);
 
 						IsMyTurn = false;
-
+						//If placing is over start game otherwise continue placing
 						if (GameMode->AIToPlace.IsEmpty() and GameMode->PlayerToPlace.IsEmpty()) {
 							GameMode->SetupAndStartTurns();
 						}
@@ -146,56 +147,53 @@ void AHumanPlayer::OnClick()
 				}
 			}
 		break;
-
+		//If the game is started and i did not click on a GameUnit yet
 		case EGameState::WaitingAction:
 			if (Hit.bBlockingHit and IsMyTurn)
 			{
 				UE_LOG(LogTemp, Warning, TEXT("MIO TURNO HIT!!"));
-				if (AGameUnit* GameUnit = Cast<AGameUnit>(Hit.GetActor()))
+				if (AGameUnit* GameUnit = Cast<AGameUnit>(Hit.GetActor())) // If i did hit a GameUnit
 				{
 					UE_LOG(LogTemp, Warning, TEXT("PRESO GAMEUNIT"));
-					if (GameUnit->Owner == GameMode->CurrentPlayer) {
+					if (GameUnit->Owner == GameMode->CurrentPlayer) {  // If the GameUnit was mine
 						UE_LOG(LogTemp, Warning, TEXT("MIO GAMEUNIT"));
 						FVector2D Position = GameUnit->GridPosition;
-						if (GameUnit->bCanMove) {
+						if (GameUnit->bCanMove) { // If the unit can move show the movement range
 							UE_LOG(LogTemp, Warning, TEXT("PUO MUOVERE"));
 							GameMode->CurrentGameState = EGameState::UnitSelected;
 							SelectedUnit = GameUnit;
 							GameMode->GField->ShowReachableTiles(Position, GameUnit->MovementRange);
 						}
 						if (GameUnit->bCanAttack and !GameMode->GField->AttackableTiles(GameUnit->GridPosition, GameUnit->AttackRange).IsEmpty()) {
-							UE_LOG(LogTemp, Warning, TEXT("PUO ATTACCARE"));
+							UE_LOG(LogTemp, Warning, TEXT("PUO ATTACCARE")); // if the unit can attack show the attack range
 							GameMode->CurrentGameState = EGameState::UnitSelected;
 							SelectedUnit = GameUnit;
 							GameMode->GField->ShowAttackableTiles(Position, GameUnit->AttackRange);
 						}
 					}
 				}
-				//IsMyTurn = false;
 			}
 		break;
-
+		//If i had selected a GameUnit
 		case EGameState::UnitSelected:
 			if (Hit.bBlockingHit and IsMyTurn)
 			{
 				UE_LOG(LogTemp, Warning, TEXT("MIO TURNO MOVING HIT!!"));
-				if (ATile* Tile = Cast<ATile>(Hit.GetActor()))
+				if (ATile* Tile = Cast<ATile>(Hit.GetActor())) // If i click on a tile
 				{
-					if (Tile->TileColor == ETileColor::GREEN and Tile->TileStatus == ETileStatus::EMPTY) {
-						//Muovi il giocatore
-						//FVector2D StartPosition = SelectedUnit->GridPosition;
+					if (Tile->TileColor == ETileColor::GREEN and Tile->TileStatus == ETileStatus::EMPTY) { //If the tile is in movement range
+						// Move the Unit to the tile i clicked
 						FVector2D EndPosition = Tile->GetGridPosition();
 						GameMode->GField->SetAllTilesWhite();
-						GameMode->GField->MoveUnitTo(SelectedUnit, EndPosition); //muove la gameunit
-						//GameMode->CurrentGameState = EGameState::WaitingAction;
+						GameMode->GField->MoveUnitTo(SelectedUnit, EndPosition); //Moves the unit
 						SelectedUnit = nullptr;
 						GameMode->PassIfForced();
 					}
 				}
 				if (AGameUnit* GameUnit = Cast<AGameUnit>(Hit.GetActor()))
 				{
+					//If i click on the same unit again close the ranges
 					if (SelectedUnit != nullptr and SelectedUnit->Owner == GameUnit->Owner and SelectedUnit->UnitType == GameUnit->UnitType) {
-					//if (SelectedUnit != nullptr and SelectedUnit == GameUnit) {
 						GameMode->GField->SetAllTilesWhite();
 						GameMode->CurrentGameState = EGameState::WaitingAction;
 						SelectedUnit = nullptr;
@@ -203,9 +201,10 @@ void AHumanPlayer::OnClick()
 				}
 				if (AGameUnit* GameUnit = Cast<AGameUnit>(Hit.GetActor()))
 				{
+					//if i click on a enemy unit attack it (if is in range)
 					ATile** Tile = GameMode->GField->TileMap.Find(GameUnit->GridPosition);
 					if (SelectedUnit != nullptr and SelectedUnit->Owner != GameUnit->Owner and (*Tile)->TileColor == ETileColor::RED) {
-						//ATTACCA
+						//Attack
 						GameMode->GField->Attack(SelectedUnit, GameUnit);
 						GameMode->GField->SetAllTilesWhite();
 						GameMode->CurrentGameState = EGameState::WaitingAction;
@@ -215,12 +214,8 @@ void AHumanPlayer::OnClick()
 						if (!GameMode->IsGameOver) {
 							GameMode->PassIfForced();
 						}
-						else {
-							//GameMode->GField->ResetField();
-						}
 					}
 				}
-				//IsMyTurn = false;
 			}
 		break;
 	}
