@@ -197,7 +197,7 @@ TArray<ATile*> AGameField::ReachableTiles(FVector2D Pos, int32 Range)
 			{
 				// If the tile is empty or is the initial one
 				ATile** NextTile = TileMap.Find(NextPos);
-				if (NextTile && ((*NextTile)->TileStatus == ETileStatus::EMPTY || CurrentStep == 0))
+				if (NextTile && ((*NextTile)->TileStatus == ETileStatus::EMPTY))
 				{
 					Queue.Enqueue(TPair<FVector2D, int32>(NextPos, CurrentStep + 1));
 				}
